@@ -1,0 +1,6 @@
+# HQ-internal project docs stay local — the public repo is just the app.
+FABLE.md
+PLAN.md
+STATUS.md
+.claude/
+.DS_Store

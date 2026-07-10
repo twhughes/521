@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>5 · 2 · 1</title>
+<meta name="description" content="List 5. Keep 2. Pick 1. A tiny two-person decision ritual.">
+<meta property="og:title" content="5 · 2 · 1">
+<meta property="og:description" content="One lists five. The other keeps two. The lister picks the winner.">
+<meta property="og:url" content="https://twhughes.github.io/521/">
+<meta property="og:image" content="https://twhughes.github.io/521/icon-180.png">
+<meta name="theme-color" content="#FFF9F2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#191410" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="521">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%23E2593A'/%3E%3Ctext x='50' y='66' font-family='-apple-system,Helvetica,sans-serif' font-size='40' font-weight='800' fill='white' text-anchor='middle'%3E521%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+  :root {
+    --bg0: #FFF9F2;
+    --bg1: #FFEEDC;
+    --card: #FFFFFF;
+    --card2: #FFF4E8;
+    --ink: #231A12;
+    --ink2: #8A7A6A;
+    --hairline: rgba(35, 26, 18, 0.12);
+    --accent: #E2593A;
+    --accent2: #F2A03D;
+    --accent-soft: rgba(226, 89, 58, 0.12);
+    --good: #3E8E5A;
+    --shadow: 0 10px 30px rgba(120, 72, 30, 0.12), 0 2px 8px rgba(120, 72, 30, 0.08);
+    --shadow-pick: 0 14px 34px rgba(226, 89, 58, 0.25), 0 3px 10px rgba(226, 89, 58, 0.15);
+    --radius: 22px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg0: #191410;
+      --bg1: #241B12;
+      --card: #2A2119;
+      --card2: #332818;
+      --ink: #F5EDE4;
+      --ink2: #B5A492;
+      --hairline: rgba(245, 237, 228, 0.14);
+      --accent: #FF7A52;
+      --accent2: #F2A03D;
+      --accent-soft: rgba(255, 122, 82, 0.16);
+      --good: #62B784;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.3);
+      --shadow-pick: 0 14px 34px rgba(255, 122, 82, 0.28), 0 3px 10px rgba(0, 0, 0, 0.3);
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(1200px 600px at 50% -10%, var(--bg1), transparent 70%), var(--bg0);
+    color: var(--ink);
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: max(20px, env(safe-area-inset-top)) 20px calc(48px + env(safe-area-inset-bottom));
+  }
+
+  /* ---------- brand / hero ---------- */
+  .hero { text-align: center; padding: 26px 0 8px; }
+  .brand {
+    font-size: 54px; font-weight: 800; letter-spacing: -1px; line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .brand .dot { color: var(--accent); font-weight: 700; margin: 0 2px; }
+  .tagline { margin-top: 10px; font-size: 15px; color: var(--ink2); font-weight: 500; }
+
+  /* ---------- stepper ---------- */
+  .stepper { display: flex; align-items: center; justify-content: center; gap: 0; padding: 18px 0 6px; }
+  .step {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums;
+    border: 1.5px solid var(--hairline); color: var(--ink2); background: transparent;
+    position: relative;
+  }
+  .step.past { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+  .step.now { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 0 0 5px var(--accent-soft); }
+  .step-line { width: 26px; height: 1.5px; background: var(--hairline); }
+  .step-line.past { background: var(--accent); opacity: 0.5; }
+
+  /* ---------- cards ---------- */
+  .card {
+    background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 20px; margin-top: 18px;
+  }
+  .card h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink2); margin-bottom: 14px; }
+  .lede { font-size: 22px; font-weight: 800; line-height: 1.25; letter-spacing: -0.3px; }
+  .sub { margin-top: 6px; font-size: 15px; color: var(--ink2); line-height: 1.45; }
+  .title-chip {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 12px;
+    background: var(--accent-soft); color: var(--accent);
+    font-size: 14px; font-weight: 700; padding: 6px 12px; border-radius: 999px;
+  }
+
+  /* ---------- compose ---------- */
+  .field-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink2); margin: 16px 0 6px; }
+  .field-label:first-child { margin-top: 0; }
+  input.text-in {
+    width: 100%; min-width: 0; border: none; outline: none; background: transparent;
+    font: inherit; font-size: 17px; font-weight: 600; color: var(--ink);
+    padding: 8px 0; border-bottom: 1.5px solid var(--hairline);
+    border-radius: 0; caret-color: var(--accent);
+  }
+  input.text-in:focus { border-bottom-color: var(--accent); }
+  input.text-in::placeholder { color: var(--ink2); opacity: 0.55; font-weight: 500; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .chip {
+    border: none; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+    background: var(--card2); color: var(--ink); padding: 8px 13px; border-radius: 999px;
+    transition: transform 0.15s ease;
+  }
+  .chip:active { transform: scale(0.94); }
+  .opt-row { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+  .opt-num {
+    width: 28px; height: 28px; border-radius: 50%; flex: none;
+    background: var(--card2); color: var(--ink2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums;
+  }
+  .add-opt {
+    margin-top: 14px; background: none; border: none; font: inherit; cursor: pointer;
+    font-size: 14px; font-weight: 700; color: var(--accent); padding: 4px 0;
+  }
+  .form-error { margin-top: 12px; font-size: 14px; font-weight: 600; color: var(--accent); display: none; }
+  .form-error.show { display: block; }
+
+  /* ---------- choice cards ---------- */
+  .choices { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .choice {
+    display: flex; align-items: center; gap: 14px; text-align: left;
+    background: var(--card); border: 2px solid transparent; border-radius: 18px;
+    box-shadow: var(--shadow); padding: 14px 16px; cursor: pointer;
+    font: inherit; color: var(--ink); width: 100%;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.15s ease, box-shadow 0.25s ease, opacity 0.3s ease;
+    animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+  .choice:active { transform: scale(0.975); }
+  .choice .emoji {
+    width: 46px; height: 46px; border-radius: 14px; flex: none; background: var(--card2);
+    display: flex; align-items: center; justify-content: center; font-size: 24px;
+  }
+  .choice .label { flex: 1; font-size: 17px; font-weight: 650; line-height: 1.3; overflow-wrap: anywhere; }
+  .choice .badge {
+    flex: none; font-size: 11px; font-weight: 800; letter-spacing: 0.06em;
+    background: var(--accent); color: #fff; border-radius: 999px; padding: 5px 10px;
+    opacity: 0; transform: scale(0.6); transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .choice.kept { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-pick); }
+  .choice.kept .badge { opacity: 1; transform: scale(1); }
+  .choice.dimmed { opacity: 0.38; }
+  .choice.winner { border-color: var(--accent); box-shadow: var(--shadow-pick); }
+  @keyframes rise { from { opacity: 0; transform: translateY(16px); } }
+
+  .keep-counter { margin-top: 16px; text-align: center; font-size: 14px; font-weight: 700; color: var(--ink2); }
+  .keep-counter .full { color: var(--good); }
+
+  /* ---------- CTA + buttons ---------- */
+  .cta {
+    display: flex; align-items: center; justify-content: center; width: 100%;
+    margin-top: 18px; padding: 17px; border: none; border-radius: 17px; cursor: pointer;
+    font: inherit; font-size: 17px; font-weight: 750; color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    box-shadow: 0 8px 22px rgba(226, 89, 58, 0.35);
+    transition: transform 0.15s ease, opacity 0.2s ease;
+  }
+  .cta:active { transform: scale(0.975); }
+  .cta:disabled { opacity: 0.35; box-shadow: none; cursor: default; }
+  .cta.secondary { background: var(--card2); color: var(--ink); box-shadow: none; }
+  .linkrow {
+    display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 12px;
+    background: var(--card2); border: none; border-radius: 13px; padding: 12px 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+    color: var(--ink2); cursor: pointer; text-align: left;
+  }
+  .linkrow .trunc { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hint {
+    margin-top: 14px; font-size: 13px; font-weight: 600; color: var(--ink2);
+    background: var(--card2); border-radius: 12px; padding: 10px 13px; line-height: 1.45;
+  }
+
+  /* ---------- coin ---------- */
+  .coin-area { display: flex; align-items: center; gap: 18px; }
+  .coin-scene { width: 74px; height: 74px; flex: none; perspective: 500px; }
+  .coin {
+    width: 100%; height: 100%; position: relative; transform-style: preserve-3d;
+    transition: transform 1.7s cubic-bezier(0.18, 0.75, 0.25, 1);
+  }
+  .coin .face {
+    position: absolute; inset: 0; border-radius: 50%; backface-visibility: hidden;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: 800; color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.25);
+  }
+  .coin .face.back { transform: rotateY(180deg); background: linear-gradient(135deg, #7A66D9, #4FA3D9); }
+  .coin-side { flex: 1; }
+  .coin-names { display: flex; gap: 8px; margin-bottom: 10px; }
+  .coin-names input { width: 50%; font-size: 15px; }
+  .coin-result { margin-top: 10px; font-size: 15px; font-weight: 700; min-height: 20px; }
+  .btn-small {
+    background: var(--accent-soft); color: var(--accent); border: none; border-radius: 999px;
+    font: inherit; font-size: 14px; font-weight: 750; padding: 9px 16px; cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+  .btn-small:active { transform: scale(0.94); }
+
+  /* ---------- history ---------- */
+  .hist-row {
+    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+    background: none; border: none; font: inherit; color: var(--ink); cursor: pointer;
+    padding: 10px 2px; border-bottom: 1px solid var(--hairline);
+  }
+  .hist-row:last-child { border-bottom: none; }
+  .hist-emoji { font-size: 20px; flex: none; }
+  .hist-main { flex: 1; min-width: 0; }
+  .hist-title { font-size: 15px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hist-state { font-size: 13px; color: var(--ink2); font-weight: 500; margin-top: 1px; }
+  .hist-date { font-size: 12px; color: var(--ink2); flex: none; }
+
+  /* ---------- winner / done ---------- */
+  .winner-stage { text-align: center; padding: 10px 0 4px; }
+  .trophy { font-size: 58px; animation: pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; }
+  .winner-name { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; margin-top: 10px; overflow-wrap: anywhere; }
+  .winner-sub { margin-top: 8px; font-size: 15px; color: var(--ink2); font-weight: 550; }
+  .ritual-note { margin-top: 18px; font-size: 13px; color: var(--ink2); }
+  @keyframes pop { from { opacity: 0; transform: scale(0.3); } }
+
+  /* ---------- footer / misc ---------- */
+  .house-rule {
+    margin-top: 26px; text-align: center; font-size: 13px; color: var(--ink2);
+    font-weight: 550; line-height: 1.5; padding: 0 12px;
+  }
+  .house-rule b { color: var(--accent); font-weight: 750; }
+  details.explain { margin-top: 16px; }
+  details.explain summary {
+    font-size: 13px; font-weight: 700; color: var(--ink2); cursor: pointer; list-style: none;
+  }
+  details.explain summary::before { content: "ⓘ "; }
+  details.explain p { margin-top: 8px; font-size: 13.5px; color: var(--ink2); line-height: 1.55; }
+  .toast {
+    position: fixed; left: 50%; bottom: calc(28px + env(safe-area-inset-bottom));
+    transform: translateX(-50%) translateY(8px); z-index: 60;
+    background: var(--ink); color: var(--bg0); font-size: 14px; font-weight: 700;
+    padding: 11px 18px; border-radius: 999px; opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
+  .home-link { display: block; text-align: center; margin-top: 20px; font-size: 14px; font-weight: 700; color: var(--accent); text-decoration: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<canvas id="confetti"></canvas>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* ============================================================
+   5 · 2 · 1 — a two-person decision ritual with zero backend.
+   The whole round travels inside the link. Nothing is stored
+   anywhere except the two phones it belongs to.
+   Payload (hash fragment, base64url of JSON):
+     { v:1, s:'cut'|'close'|'done', t:title, l:lister, c:cutter,
+       o:[options], k:[keptIdx,keptIdx], w:winnerIdx }
+   ============================================================ */
+
+const $ = (sel) => document.querySelector(sel);
+const app = $('#app');
+
+/* ---------- storage (fails soft in private mode) ---------- */
+const store = {
+  get(k, fallback) { try { const v = localStorage.getItem('521.' + k); return v === null ? fallback : JSON.parse(v); } catch { return fallback; } },
+  set(k, v) { try { localStorage.setItem('521.' + k, JSON.stringify(v)); } catch {} },
+};
+
+/* ---------- codec: JSON → UTF-8 → base64url ---------- */
+function encodePayload(obj) {
+  const bytes = new TextEncoder().encode(JSON.stringify(obj));
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function decodePayload(str) {
+  let b64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (b64.length % 4) b64 += '=';
+  const bin = atob(b64);
+  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+const linkFor = (payload) =>
+  location.origin + location.pathname + '#' + encodePayload(payload);
+
+/* ---------- emoji matcher ---------- */
+const EMOJI_RULES = [
+  [/sushi|omakase|sashimi|izakaya|japanese/i, '🍣'],
+  [/ramen|noodle|pho\b|udon|soba/i, '🍜'],
+  [/pizza|slice/i, '🍕'],
+  [/taco|taqueria|mexican|burrito|quesadilla|cantina|pastor/i, '🌮'],
+  [/burger|smash|shake shack/i, '🍔'],
+  [/thai|curry|indian|masala/i, '🍛'],
+  [/pasta|italian|trattoria|osteria/i, '🍝'],
+  [/dumpling|dim ?sum|chinese|szechuan|sichuan|bao\b/i, '🥟'],
+  [/korean|kbbq|bulgogi|bibimbap/i, '🍖'],
+  [/bbq|barbecue|smokehouse|steak|grill/i, '🥩'],
+  [/oyster|seafood|fish|crab|lobster|clam/i, '🦪'],
+  [/poke|hawaiian/i, '🥢'],
+  [/tapas|spanish|paella/i, '🥘'],
+  [/french|bistro|brasserie/i, '🥖'],
+  [/mediterranean|greek|gyro|falafel|shawarma|halal/i, '🥙'],
+  [/vietnamese|banh/i, '🥢'],
+  [/wine|vino|cocktail|speakeasy|\bbar\b/i, '🍷'],
+  [/beer|brewery|\bpub\b|taproom/i, '🍺'],
+  [/coffee|cafe|café|espresso/i, '☕'],
+  [/brunch|breakfast|pancake|waffle|diner|egg/i, '🥞'],
+  [/bagel|deli|sandwich|hoagie/i, '🥪'],
+  [/salad|vegan|veggie|vegetarian|bowl/i, '🥗'],
+  [/chicken|wing/i, '🍗'],
+  [/soup|stew|hot ?pot/i, '🍲'],
+  [/dessert|ice ?cream|gelato|sundae/i, '🍦'],
+  [/bakery|croissant|pastry|patisserie/i, '🥐'],
+  [/donut|doughnut/i, '🍩'],
+  [/movie|film|cinema/i, '🍿'],
+  [/theater|theatre|broadway|comedy|show\b/i, '🎭'],
+  [/museum|gallery|exhibit/i, '🖼️'],
+  [/park\b|walk|hike|picnic/i, '🌳'],
+  [/game|arcade|bowling|golf/i, '🎲'],
+  [/concert|music|jazz|gig\b/i, '🎶'],
+];
+const EMOJI_FALLBACK = ['🍽️', '✨', '🎲', '🌟', '💫', '🧭', '🎁'];
+function emojiFor(text, i) {
+  for (const [re, e] of EMOJI_RULES) if (re.test(text)) return e;
+  return EMOJI_FALLBACK[i % EMOJI_FALLBACK.length];
+}
+
+/* ---------- tiny ui helpers ---------- */
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+function stepper(now) { // now: 5, 2, 1, or 0 (done)
+  const states = { 5: 0, 2: 1, 1: 2, 0: 3 };
+  const pos = states[now];
+  const cls = (i) => (i < pos ? 'past' : i === pos ? 'now' : '');
+  return `<div class="stepper">
+    <div class="step ${cls(0)}">5</div><div class="step-line ${pos > 0 ? 'past' : ''}"></div>
+    <div class="step ${cls(1)}">2</div><div class="step-line ${pos > 1 ? 'past' : ''}"></div>
+    <div class="step ${cls(2)}">1</div>
+  </div>`;
+}
+const houseRule = `<p class="house-rule">House rule — <b>say what you actually want.</b><br>It works out in the end.</p>`;
+
+/* ---------- share ---------- */
+async function shareText(text) {
+  if (navigator.share) {
+    try { await navigator.share({ text }); return true; } catch (e) { /* user closed the sheet */ }
+  }
+  try { await navigator.clipboard.writeText(text); toast('Copied — paste it into Messages'); return true; }
+  catch { toast('Could not copy — use the link row below'); return false; }
+}
+function linkRowHTML(url) {
+  return `<button class="linkrow" data-action="copy-url" data-url="${esc(url)}" id="share-url">
+    🔗 <span class="trunc">${esc(url)}</span> ⧉</button>`;
+}
+
+/* ---------- history ---------- */
+function logRound(entry) {
+  const h = store.get('history', []);
+  h.unshift({ ts: Date.now(), ...entry });
+  store.set('history', h.slice(0, 12));
+}
+function fmtDay(ts) {
+  const d = new Date(ts), now = new Date();
+  const days = Math.floor((now - d) / 86400000);
+  if (d.toDateString() === now.toDateString()) return 'today';
+  if (days < 2) return 'yesterday';
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+/* ---------- confetti ---------- */
+function confetti() {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const canvas = $('#confetti');
+  const ctx = canvas.getContext('2d');
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  canvas.width = innerWidth * dpr;
+  canvas.height = innerHeight * dpr;
+  ctx.scale(dpr, dpr);
+  const colors = ['#E2593A', '#F2A03D', '#3E8E5A', '#7A66D9', '#4FA3D9', '#F5C542'];
+  const parts = Array.from({ length: 140 }, () => ({
+    x: innerWidth / 2 + (Math.random() - 0.5) * innerWidth * 0.5,
+    y: innerHeight * 0.35 + (Math.random() - 0.5) * 60,
+    vx: (Math.random() - 0.5) * 11,
+    vy: -(4 + Math.random() * 10),
+    w: 6 + Math.random() * 6,
+    h: 8 + Math.random() * 8,
+    rot: Math.random() * Math.PI,
+    vr: (Math.random() - 0.5) * 0.3,
+    color: colors[(Math.random() * colors.length) | 0],
+  }));
+  const t0 = performance.now();
+  (function frame(t) {
+    const dt = (t - t0) / 1000;
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    for (const p of parts) {
+      p.vy += 0.28; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+      ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, 1 - dt / 2.4);
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.restore();
+    }
+    if (dt < 2.5) requestAnimationFrame(frame);
+    else ctx.clearRect(0, 0, innerWidth, innerHeight);
+  })(t0);
+}
+
+/* ============================================================
+   VIEWS
+   ============================================================ */
+let keepSet = new Set();   // cut view selection
+let finalPick = null;      // close view selection
+let composeCount = 5;      // visible option slots
+
+const OPT_PLACEHOLDERS = ['that sushi place', 'the thai spot', 'tacos obviously', 'somewhere new', 'the reliable one', 'wildcard', 'dealer’s choice'];
+
+function renderHome() {
+  const name = store.get('name', '');
+  const partner = store.get('partner', '');
+  const history = store.get('history', []);
+  const optRows = Array.from({ length: composeCount }, (_, i) => `
+    <div class="opt-row">
+      <div class="opt-num">${i + 1}</div>
+      <input class="text-in opt-in" id="opt${i}" maxlength="64" autocomplete="off"
+             placeholder="${esc(OPT_PLACEHOLDERS[i % OPT_PLACEHOLDERS.length])}">
+    </div>`).join('');
+
+  app.innerHTML = `
+    <div class="hero">
+      <div class="brand">5<span class="dot">·</span>2<span class="dot">·</span>1</div>
+      <p class="tagline">You list five. They keep two. You pick the winner.</p>
+    </div>
+
+    <div class="card">
+      <h2>Start a round</h2>
+      <div class="field-label">What are we deciding?</div>
+      <input class="text-in" id="title-in" maxlength="48" autocomplete="off" placeholder="Dinner tonight">
+      <div class="chips">
+        <button class="chip" data-action="chip-title" data-title="Dinner tonight">🍽️ Dinner</button>
+        <button class="chip" data-action="chip-title" data-title="Takeout">🥡 Takeout</button>
+        <button class="chip" data-action="chip-title" data-title="Movie night">🍿 Movie</button>
+        <button class="chip" data-action="chip-title" data-title="Date night">✨ Date night</button>
+      </div>
+      <div class="field-label">Your name</div>
+      <input class="text-in" id="name-in" maxlength="24" autocomplete="off" placeholder="you" value="${esc(name)}">
+      <div class="field-label">Your five</div>
+      ${optRows}
+      ${composeCount < 7 ? '<button class="add-opt" data-action="add-option">+ one more</button>' : ''}
+      <div class="form-error" id="form-error"></div>
+      <button class="cta" data-action="compose-share" id="cta">Send it — they keep 2</button>
+      <div id="compose-linkrow"></div>
+    </div>
+
+    <div class="card">
+      <h2>Who lists tonight?</h2>
+      <div class="coin-area">
+        <div class="coin-scene"><div class="coin" id="coin">
+          <div class="face front" id="coin-front">${esc((name || 'A')[0].toUpperCase())}</div>
+          <div class="face back" id="coin-back">${esc((partner || 'B')[0].toUpperCase())}</div>
+        </div></div>
+        <div class="coin-side">
+          <div class="coin-names">
+            <input class="text-in" id="coin-me" maxlength="24" placeholder="you" value="${esc(name)}">
+            <input class="text-in" id="coin-them" maxlength="24" placeholder="them" value="${esc(partner)}">
+          </div>
+          <button class="btn-small" data-action="flip-coin" id="flip-btn">Flip</button>
+          <div class="coin-result" id="coin-result"></div>
+        </div>
+      </div>
+    </div>
+
+    ${history.length ? `<div class="card"><h2>Recent rounds</h2>${history.map((h, i) => `
+      <button class="hist-row" data-action="open-history" data-i="${i}">
+        <span class="hist-emoji">${h.winner ? '🏆' : emojiFor(h.title || '', i)}</span>
+        <span class="hist-main">
+          <span class="hist-title">${esc(h.title || 'Untitled round')}</span>
+          <span class="hist-state">${h.winner ? esc(h.winner) : ({ sent: 'sent — waiting on their 2', cut: 'you kept 2 — their call', closed: 'decided', done: 'decided' }[h.stage] || '')}</span>
+        </span>
+        <span class="hist-date">${fmtDay(h.ts)}</span>
+      </button>`).join('')}</div>` : ''}
+
+    ${houseRule}
+  `;
+}
+
+function renderCut(p) {
+  const myName = store.get('name', '');
+  const forSelf = myName && myName === p.l;
+  keepSet = new Set();
+  app.innerHTML = `
+    ${stepper(2)}
+    <div class="card" style="text-align:center">
+      <p class="lede">${esc(p.l || 'Someone')} listed ${p.o.length}.</p>
+      <p class="sub">Keep the <b>2</b> you actually want.</p>
+      ${p.t ? `<span class="title-chip">${emojiFor(p.t, 0)} ${esc(p.t)}</span>` : ''}
+      ${forSelf ? `<div class="hint">This is your own list — this link was meant for your partner 😉</div>` : ''}
+    </div>
+    <div class="choices">
+      ${p.o.map((opt, i) => `
+        <button class="choice" data-action="toggle-keep" data-i="${i}" style="animation-delay:${i * 55}ms">
+          <span class="emoji">${emojiFor(opt, i)}</span>
+          <span class="label">${esc(opt)}</span>
+          <span class="badge">KEEP ✓</span>
+        </button>`).join('')}
+    </div>
+    <div class="keep-counter" id="keep-counter">0 of 2 kept</div>
+    <div class="card">
+      <div class="field-label">Your name</div>
+      <input class="text-in" id="cutter-name" maxlength="24" placeholder="you" value="${esc(forSelf ? '' : myName)}">
+      <button class="cta" data-action="cut-share" id="cta" disabled>Send your 2 back</button>
+      <div id="cut-linkrow"></div>
+    </div>
+    <details class="explain"><summary>First time? How 5·2·1 works</summary>
+      <p>It's a tiny ritual for deciding as a pair: one person lists five options, the other keeps their favorite two, and the lister picks the winner from those. Be honest about what you want — no strategic picks, no guessing what they'd prefer. It works out in the end.</p>
+    </details>
+    ${houseRule}
+  `;
+}
+
+function renderClose(p) {
+  const kept = p.k.map((i) => ({ i, text: p.o[i] }));
+  finalPick = null;
+  app.innerHTML = `
+    ${stepper(1)}
+    <div class="card" style="text-align:center">
+      <p class="lede">${esc(p.c || 'They')} kept 2.</p>
+      <p class="sub">Your call, ${esc(p.l || 'lister')}. Pick the winner.</p>
+      ${p.t ? `<span class="title-chip">${emojiFor(p.t, 0)} ${esc(p.t)}</span>` : ''}
+    </div>
+    <div class="choices" id="final-choices">
+      ${kept.map(({ i, text }, j) => `
+        <button class="choice" data-action="pick-final" data-i="${i}" style="animation-delay:${j * 90}ms">
+          <span class="emoji">${emojiFor(text, i)}</span>
+          <span class="label">${esc(text)}</span>
+          <span class="badge">🏆</span>
+        </button>`).join('')}
+    </div>
+    <div id="close-after"></div>
+    <details class="explain"><summary>The other three</summary>
+      <p>${p.o.filter((_, i) => !p.k.includes(i)).map(esc).join(' · ') || '—'}</p>
+    </details>
+    ${houseRule}
+  `;
+}
+
+function renderDone(p) {
+  const winner = p.o[p.w];
+  app.innerHTML = `
+    ${stepper(0)}
+    <div class="card winner-stage">
+      <div class="trophy">🏆</div>
+      <div class="winner-name">${esc(winner)}</div>
+      <p class="winner-sub">${p.t ? esc(p.t) + ' — ' : ''}decided.</p>
+      <p class="ritual-note">${esc(p.l || '?')} listed ${p.o.length} · ${esc(p.c || '?')} kept 2 · ${esc(p.l || '?')} picked the one</p>
+      <button class="cta" data-action="done-restart">Start the next round</button>
+    </div>
+    <details class="explain"><summary>The full five</summary>
+      <p>${p.o.map((o, i) => (i === p.w ? '🏆 ' : '') + esc(o)).join(' · ')}</p>
+    </details>
+    ${houseRule}
+  `;
+  logRound({ title: p.t, stage: 'done', winner });
+  setTimeout(confetti, 350);
+}
+
+function renderBroken() {
+  app.innerHTML = `
+    <div class="hero">
+      <div class="brand">5<span class="dot">·</span>2<span class="dot">·</span>1</div>
+      <p class="tagline">Hmm — that link didn't survive the trip.</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <p class="sub">Ask them to send it again, or start fresh.</p>
+      <button class="cta" data-action="done-restart">Start a round</button>
+    </div>`;
+}
+
+/* ============================================================
+   ACTIONS
+   ============================================================ */
+function currentPayload() {
+  const hash = location.hash.slice(1);
+  if (!hash) return null;
+  return decodePayload(hash);
+}
+
+function composeShare() {
+  const err = $('#form-error');
+  err.classList.remove('show');
+  const name = $('#name-in').value.trim();
+  const title = $('#title-in').value.trim();
+  const opts = [];
+  for (let i = 0; i < composeCount; i++) {
+    const v = $('#opt' + i)?.value.trim();
+    if (v) opts.push(v);
+  }
+  if (opts.length < 3) { err.textContent = 'Give them at least 3 options (5 is the ritual).'; err.classList.add('show'); return; }
+  const lower = opts.map((o) => o.toLowerCase());
+  if (new Set(lower).size !== lower.length) { err.textContent = 'Two of those are the same — every option should be distinct.'; err.classList.add('show'); return; }
+  if (name) store.set('name', name);
+
+  const payload = { v: 1, s: 'cut', t: title, l: name, o: opts };
+  const url = linkFor(payload);
+  $('#compose-linkrow').innerHTML = linkRowHTML(url);
+  logRound({ title, stage: 'sent', url });
+  const head = title ? `5·2·1 — ${title}. ` : '5·2·1 — ';
+  shareText(`${head}I listed ${opts.length}, you keep 2: ${url}`);
+}
+
+function toggleKeep(btn) {
+  const i = Number(btn.dataset.i);
+  if (keepSet.has(i)) { keepSet.delete(i); btn.classList.remove('kept'); }
+  else if (keepSet.size < 2) { keepSet.add(i); btn.classList.add('kept'); }
+  else { toast('Only 2 — swap one out first'); return; }
+  const counter = $('#keep-counter');
+  counter.innerHTML = keepSet.size === 2 ? '<span class="full">2 of 2 kept ✓</span>' : `${keepSet.size} of 2 kept`;
+  $('#cta').disabled = keepSet.size !== 2;
+}
+
+function cutShare() {
+  const p = currentPayload();
+  const cutter = $('#cutter-name').value.trim();
+  if (cutter) store.set('name', cutter);
+  const payload = { ...p, s: 'close', c: cutter, k: [...keepSet].sort((a, b) => a - b) };
+  const url = linkFor(payload);
+  $('#cut-linkrow').innerHTML = linkRowHTML(url);
+  logRound({ title: p.t, stage: 'cut', url });
+  const head = p.t ? `5·2·1 — ${p.t}. ` : '5·2·1 — ';
+  shareText(`${head}Down to 2, your call: ${url}`);
+}
+
+function pickFinal(btn) {
+  if (finalPick !== null) return;
+  finalPick = Number(btn.dataset.i);
+  const p = currentPayload();
+  document.querySelectorAll('#final-choices .choice').forEach((c) => {
+    if (Number(c.dataset.i) === finalPick) c.classList.add('winner', 'kept');
+    else c.classList.add('dimmed');
+    c.disabled = true;
+  });
+  confetti();
+  const payload = { ...p, s: 'done', w: finalPick };
+  const url = linkFor(payload);
+  logRound({ title: p.t, stage: 'closed', winner: p.o[finalPick], url });
+  $('#close-after').innerHTML = `
+    <div class="card" style="text-align:center">
+      <p class="lede">🏆 ${esc(p.o[finalPick])}</p>
+      <p class="sub">Now the sacred final step: tell ${esc(p.c || 'them')}.</p>
+      <button class="cta" data-action="close-share">Tell ${esc(p.c || 'them')}</button>
+      <button class="cta secondary" data-action="undo-final">wait, let me rethink</button>
+      <div id="close-linkrow"></div>
+    </div>`;
+  $('#close-after').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function closeShare() {
+  const p = currentPayload();
+  const payload = { ...p, s: 'done', w: finalPick };
+  const url = linkFor(payload);
+  $('#close-linkrow').innerHTML = linkRowHTML(url);
+  const head = p.t ? `5·2·1 — ${p.t}: ` : '5·2·1 — ';
+  shareText(`${head}🏆 ${p.o[finalPick]}! ${url}`);
+}
+
+function flipCoin() {
+  const me = $('#coin-me').value.trim() || 'You';
+  const them = $('#coin-them').value.trim() || 'Them';
+  store.set('name', $('#coin-me').value.trim() || store.get('name', ''));
+  store.set('partner', $('#coin-them').value.trim() || store.get('partner', ''));
+  $('#coin-front').textContent = me[0].toUpperCase();
+  $('#coin-back').textContent = them[0].toUpperCase();
+  const coin = $('#coin');
+  const tails = Math.random() < 0.5;
+  const result = $('#coin-result');
+  result.textContent = '';
+  coin.style.transition = 'none';
+  coin.style.transform = 'rotateY(0deg)';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    coin.style.transition = '';
+    coin.style.transform = `rotateY(${1800 + (tails ? 180 : 0)}deg)`;
+    setTimeout(() => {
+      result.textContent = `${tails ? them : me} lists 5 ✨`;
+    }, 1750);
+  }));
+}
+
+/* ---------- event delegation ---------- */
+app.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  const act = el.dataset.action;
+  if (act === 'chip-title') { $('#title-in').value = el.dataset.title; }
+  else if (act === 'add-option') { composeCount = Math.min(7, composeCount + 1); const vals = saveComposeValues(); renderHome(); restoreComposeValues(vals); }
+  else if (act === 'compose-share') composeShare();
+  else if (act === 'toggle-keep') toggleKeep(el);
+  else if (act === 'cut-share') cutShare();
+  else if (act === 'pick-final') pickFinal(el);
+  else if (act === 'undo-final') { finalPick = null; route(); }
+  else if (act === 'close-share') closeShare();
+  else if (act === 'done-restart') { location.hash = ''; composeCount = 5; route(); }
+  else if (act === 'flip-coin') flipCoin();
+  else if (act === 'copy-url') {
+    navigator.clipboard?.writeText(el.dataset.url).then(() => toast('Link copied ✓'), () => toast('Long-press the link to copy'));
+  }
+  else if (act === 'open-history') {
+    const h = store.get('history', [])[Number(el.dataset.i)];
+    if (h?.url) location.href = h.url;
+  }
+});
+function saveComposeValues() {
+  return {
+    title: $('#title-in')?.value, name: $('#name-in')?.value,
+    opts: Array.from({ length: composeCount }, (_, i) => $('#opt' + i)?.value ?? ''),
+  };
+}
+function restoreComposeValues(v) {
+  if (!v) return;
+  if ($('#title-in')) $('#title-in').value = v.title ?? '';
+  if ($('#name-in')) $('#name-in').value = v.name ?? '';
+  v.opts.forEach((val, i) => { if ($('#opt' + i)) $('#opt' + i).value = val; });
+}
+/* enter → next option field */
+app.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' || !e.target.classList?.contains('opt-in')) return;
+  e.preventDefault();
+  const i = Number(e.target.id.slice(3));
+  const next = $('#opt' + (i + 1));
+  if (next) next.focus();
+  else e.target.blur();
+});
+/* number keys toggle choices (desktop nicety) */
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  const n = Number(e.key);
+  if (n >= 1 && n <= 7) {
+    const btn = document.querySelectorAll('.choices .choice')[n - 1];
+    if (btn && !btn.disabled) btn.click();
+  }
+});
+
+/* ---------- router ---------- */
+function route() {
+  keepSet = new Set(); finalPick = null;
+  let p = null;
+  const hash = location.hash.slice(1);
+  if (hash) {
+    try { p = decodePayload(hash); } catch { renderBroken(); return; }
+  }
+  if (!p) { renderHome(); return; }
+  if (p.s === 'cut' && Array.isArray(p.o) && p.o.length >= 2) renderCut(p);
+  else if (p.s === 'close' && Array.isArray(p.k) && p.k.length === 2) renderClose(p);
+  else if (p.s === 'done' && Number.isInteger(p.w) && p.o?.[p.w] !== undefined) renderDone(p);
+  else renderBroken();
+  scrollTo(0, 0);
+}
+window.addEventListener('hashchange', route);
+route();
+</script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"></head><body>
+<iframe id="f" src="/index.html" style="width:430px;height:900px"></iframe>
+<pre id="out"></pre>
+<script>
+const log = [];
+const A = (name, cond) => log.push((cond ? 'PASS' : 'FAIL') + ' ' + name);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const f = document.getElementById('f');
+
+async function run() {
+  await new Promise((r) => { f.onload = r; });
+  await sleep(300);
+  let d = f.contentDocument;
+  A('home renders brand', !!d.querySelector('.brand'));
+  A('home has 5 option inputs', d.querySelectorAll('.opt-in').length === 5);
+
+  // --- compose ---
+  d.querySelector('#title-in').value = 'Dinner Friday';
+  d.querySelector('#name-in').value = 'Tyler';
+  const opts = ['Sushi Yasaka', 'Thai Market', 'Pisticci', 'Shake Shack', 'Taqueria y Fonda'];
+  opts.forEach((o, i) => { d.querySelector('#opt' + i).value = o; });
+  d.querySelector('[data-action="compose-share"]').click();
+  await sleep(400);
+  const cutUrl = d.querySelector('#compose-linkrow #share-url')?.dataset.url || '';
+  A('compose generates cut link', cutUrl.includes('#'));
+  log.push('CUTURL ' + cutUrl);
+
+  // --- cut (hash change, same document) ---
+  f.contentWindow.location.href = cutUrl;
+  await sleep(400);
+  d = f.contentDocument;
+  A('cut renders 5 choices', d.querySelectorAll('.choices .choice').length === 5);
+  A('cut names the lister', d.body.textContent.includes('Tyler listed 5'));
+  A('cut emoji matched sushi', d.body.textContent.includes('🍣'));
+  A('cut cta starts disabled', d.querySelector('#cta').disabled === true);
+  const cards = d.querySelectorAll('.choices .choice');
+  cards[0].click(); cards[1].click();
+  await sleep(150);
+  cards[2].click(); // third keep must be refused
+  await sleep(150);
+  A('third keep refused', d.querySelectorAll('.choice.kept').length === 2);
+  A('cta enabled at exactly 2', d.querySelector('#cta').disabled === false);
+  d.querySelector('#cutter-name').value = 'Partner';
+  d.querySelector('[data-action="cut-share"]').click();
+  await sleep(400);
+  const closeUrl = d.querySelector('#cut-linkrow #share-url')?.dataset.url || '';
+  A('cut generates close link', closeUrl.includes('#'));
+  log.push('CLOSEURL ' + closeUrl);
+
+  // --- close ---
+  f.contentWindow.location.href = closeUrl;
+  await sleep(400);
+  d = f.contentDocument;
+  A('close renders exactly 2', d.querySelectorAll('#final-choices .choice').length === 2);
+  A('close names the cutter', d.body.textContent.includes('Partner kept 2'));
+  A('close shows the other three', d.body.textContent.includes('Pisticci'));
+  d.querySelectorAll('#final-choices .choice')[0].click();
+  await sleep(500);
+  A('winner card appears', !!d.querySelector('#close-after .lede'));
+  A('undo offered', !!d.querySelector('[data-action="undo-final"]'));
+  d.querySelector('[data-action="close-share"]').click();
+  await sleep(400);
+  const doneUrl = d.querySelector('#close-linkrow #share-url')?.dataset.url || '';
+  A('close generates done link', doneUrl.includes('#'));
+  log.push('DONEURL ' + doneUrl);
+
+  // --- done ---
+  f.contentWindow.location.href = doneUrl;
+  await sleep(600);
+  d = f.contentDocument;
+  A('done shows trophy', !!d.querySelector('.trophy'));
+  A('done shows winner', d.body.textContent.includes('Sushi Yasaka'));
+  A('done credits the ritual', d.body.textContent.includes('kept 2'));
+
+  // --- history + broken link ---
+  f.contentWindow.location.href = '/index.html#not-a-real-payload';
+  await sleep(400);
+  d = f.contentDocument;
+  A('broken link handled kindly', d.body.textContent.includes("didn't survive"));
+  f.contentWindow.location.href = '/index.html';
+  await sleep(400);
+  d = f.contentDocument;
+  A('history remembers rounds', d.body.textContent.includes('Recent rounds'));
+  A('history logged the win', d.body.textContent.includes('🏆'));
+
+  finish();
+}
+function finish() {
+  document.getElementById('out').textContent = log.join('\n');
+  document.title = 'SMOKE:' + (log.filter((l) => l.startsWith('FAIL')).length === 0 ? 'PASS' : 'FAIL');
+}
+run().catch((e) => { log.push('ERROR ' + (e.stack || e)); finish(); });
+</script>
+</body></html>
