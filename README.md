@@ -17,6 +17,12 @@ just run          # same, once `just` is installed
 - The whole round — title, names, options, picks — is JSON, base64url-encoded
   into the URL **hash fragment**. Fragments never reach a server, so even hosted,
   no round data is ever logged anywhere.
+- The picker pages render a real map (vendored [Leaflet](https://leafletjs.com),
+  BSD-2) with numbered pins: tiles from OpenStreetMap, geocoding via Nominatim
+  (hard-bounded to ~13 km around the user) with a strictly name-matched Photon
+  fallback — all free and keyless. Option names are sent to those services to be
+  placed; anything they can't place falls back to a 📍 Google Maps deep link.
+  Location comes from the browser geolocation prompt (no location → no pins).
 - Each stage renders from the link and produces the next link:
   `home (list 5)` → `#…cut (keep 2)` → `#…close (pick 1)` → `#…done (🏆)`.
 - Share button uses the native iOS share sheet (falls back to clipboard).

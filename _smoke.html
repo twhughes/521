@@ -41,10 +41,7 @@ async function run() {
   d = f.contentDocument;
   A('cut renders 5 choices', d.querySelectorAll('.choices .choice').length === 5);
   A('cut has 5 map pins', d.querySelectorAll('.choices .mapbtn').length === 5);
-  d.querySelector('.choices .mapbtn').click();
-  await sleep(200);
-  A('map panel opens inline', !d.querySelector('#map-panel').hidden &&
-    d.querySelector('#map-frame').src.includes('google.com/maps/embed'));
+  A('rendered map panel present', !!d.querySelector('#geo-panel') && !!d.querySelector('#geo-map'));
   A('cut names the lister', d.body.textContent.includes('Tyler listed 5'));
   A('cut emoji matched sushi', d.body.textContent.includes('🍣'));
   A('cut cta starts disabled', d.querySelector('#cta').disabled === true);
@@ -69,7 +66,8 @@ async function run() {
   d = f.contentDocument;
   A('close renders exactly 2', d.querySelectorAll('#final-choices .choice').length === 2);
   A('close names the cutter', d.body.textContent.includes('Partner kept 2'));
-  A('close shows the other three', d.body.textContent.includes('Pisticci'));
+  A('cut three ghosted below, same style', d.querySelectorAll('#ghost-rows .ghost-row').length === 3 &&
+    d.body.textContent.includes('Pisticci'));
   d.querySelectorAll('#final-choices .choice')[0].click();
   await sleep(500);
   A('winner card appears', !!d.querySelector('#close-after .lede'));
