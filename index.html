@@ -131,6 +131,13 @@
     margin-top: 14px; background: none; border: none; font: inherit; cursor: pointer;
     font-size: 14px; font-weight: 700; color: var(--accent); padding: 4px 0;
   }
+  .duo { display: flex; gap: 14px; margin-top: 16px; }
+  .duo > div { flex: 1; min-width: 0; }
+  .share-alt {
+    display: block; margin: 12px auto 0; background: none; border: none; cursor: pointer;
+    font: inherit; font-size: 14px; font-weight: 700; color: var(--accent);
+  }
+  .share-alt[hidden] { display: none; }
   .form-error { margin-top: 12px; font-size: 14px; font-weight: 600; color: var(--accent); display: none; }
   .form-error.show { display: block; }
 
@@ -370,13 +377,17 @@ function stepper(now) { // now: 5, 2, 1, or 0 (done)
 }
 const houseRule = `<p class="house-rule">House rule — <b>say what you actually want.</b><br>It works out in the end.</p>`;
 
-/* ---------- share ---------- */
-async function shareText(text) {
-  if (navigator.share) {
-    try { await navigator.share({ text }); return true; } catch (e) { /* user closed the sheet */ }
-  }
-  try { await navigator.clipboard.writeText(text); toast('Copied — paste it into Messages'); return true; }
-  catch { toast('Could not copy — use the link row below'); return false; }
+/* ---------- share: copy-first, share sheet as the optional extra ---------- */
+let lastMsg = '';
+async function finishShare(msg, ctaSel, doneLabel) {
+  lastMsg = msg;
+  const alt = document.querySelector('[data-action="share-alt"]');
+  if (alt && navigator.share) alt.hidden = false;
+  let ok = true;
+  try { await navigator.clipboard.writeText(msg); } catch { ok = false; }
+  const cta = document.querySelector(ctaSel);
+  if (ok) { toast('Copied — paste it anywhere'); if (cta) cta.textContent = doneLabel; }
+  else { toast('Copy blocked — use the link row below'); }
 }
 function linkRowHTML(url) {
   return `<button class="linkrow" data-action="copy-url" data-url="${esc(url)}" id="share-url">
@@ -461,21 +472,28 @@ function renderHome() {
 
     <div class="card">
       <h2>Start a round</h2>
-      <div class="field-label">What are we deciding?</div>
-      <input class="text-in" id="title-in" maxlength="48" autocomplete="off" placeholder="Dinner tonight">
+      <div class="field-label">Your five <span style="opacity:.6">(paste a numbered list — it fills itself)</span></div>
+      ${optRows}
+      ${composeCount < 7 ? '<button class="add-opt" data-action="add-option">+ one more</button>' : ''}
+      <div class="duo">
+        <div>
+          <div class="field-label">Title — optional</div>
+          <input class="text-in" id="title-in" maxlength="48" autocomplete="off" placeholder="Dinner tonight">
+        </div>
+        <div>
+          <div class="field-label">Your name — optional</div>
+          <input class="text-in" id="name-in" maxlength="24" autocomplete="off" placeholder="you" value="${esc(name)}">
+        </div>
+      </div>
       <div class="chips">
         <button class="chip" data-action="chip-title" data-title="Dinner tonight">🍽️ Dinner</button>
         <button class="chip" data-action="chip-title" data-title="Takeout">🥡 Takeout</button>
         <button class="chip" data-action="chip-title" data-title="Movie night">🍿 Movie</button>
         <button class="chip" data-action="chip-title" data-title="Date night">✨ Date night</button>
       </div>
-      <div class="field-label">Your name</div>
-      <input class="text-in" id="name-in" maxlength="24" autocomplete="off" placeholder="you" value="${esc(name)}">
-      <div class="field-label">Your five</div>
-      ${optRows}
-      ${composeCount < 7 ? '<button class="add-opt" data-action="add-option">+ one more</button>' : ''}
       <div class="form-error" id="form-error"></div>
-      <button class="cta" data-action="compose-share" id="cta">Send it — they keep 2</button>
+      <button class="cta" data-action="compose-share" id="cta">Copy the link — they keep 2</button>
+      <button class="share-alt" data-action="share-alt" hidden>📤 or send with the share sheet</button>
       <div id="compose-linkrow"></div>
     </div>
 
@@ -518,7 +536,7 @@ function renderCut(p) {
   app.innerHTML = `
     ${stepper(2)}
     <div class="card" style="text-align:center">
-      <p class="lede">${esc(p.l || 'Someone')} listed ${p.o.length}.</p>
+      <p class="lede">${p.l ? esc(p.l) + ' listed ' + p.o.length + '.' : 'Your cut.'}</p>
       <p class="sub">Keep the <b>2</b> you actually want.</p>
       ${p.t ? `<span class="title-chip">${emojiFor(p.t, 0)} ${esc(p.t)}</span>` : ''}
       ${forSelf ? `<div class="hint">This is your own list — this link was meant for your partner 😉</div>` : ''}
@@ -533,9 +551,10 @@ function renderCut(p) {
     </div>
     <div class="keep-counter" id="keep-counter">0 of 2 kept</div>
     <div class="card">
-      <div class="field-label">Your name</div>
+      <div class="field-label">Your name — optional</div>
       <input class="text-in" id="cutter-name" maxlength="24" placeholder="you" value="${esc(forSelf ? '' : myName)}">
-      <button class="cta" data-action="cut-share" id="cta" disabled>Send your 2 back</button>
+      <button class="cta" data-action="cut-share" id="cta" disabled>Copy the link back</button>
+      <button class="share-alt" data-action="share-alt" hidden>📤 or send with the share sheet</button>
       <div id="cut-linkrow"></div>
     </div>
     <details class="explain"><summary>First time? How 5·2·1 works</summary>
@@ -551,8 +570,8 @@ function renderClose(p) {
   app.innerHTML = `
     ${stepper(1)}
     <div class="card" style="text-align:center">
-      <p class="lede">${esc(p.c || 'They')} kept 2.</p>
-      <p class="sub">Your call, ${esc(p.l || 'lister')}. Pick the winner.</p>
+      <p class="lede">${p.c ? esc(p.c) + ' kept 2.' : 'Down to 2.'}</p>
+      <p class="sub">Your call${p.l ? ', ' + esc(p.l) : ''}. Pick the winner.</p>
       ${p.t ? `<span class="title-chip">${emojiFor(p.t, 0)} ${esc(p.t)}</span>` : ''}
     </div>
     <div class="choices" id="final-choices">
@@ -579,7 +598,9 @@ function renderDone(p) {
       <div class="trophy">🏆</div>
       <div class="winner-name">${esc(winner)}</div>
       <p class="winner-sub">${p.t ? esc(p.t) + ' — ' : ''}decided.</p>
-      <p class="ritual-note">${esc(p.l || '?')} listed ${p.o.length} · ${esc(p.c || '?')} kept 2 · ${esc(p.l || '?')} picked the one</p>
+      <p class="ritual-note">${p.l && p.c
+        ? `${esc(p.l)} listed ${p.o.length} · ${esc(p.c)} kept 2 · ${esc(p.l)} picked the one`
+        : `listed ${p.o.length} · kept 2 · picked 1 — the 5·2·1 way`}</p>
       <button class="cta" data-action="done-restart">Start the next round</button>
     </div>
     <details class="explain"><summary>The full five</summary>
@@ -632,7 +653,8 @@ function composeShare() {
   $('#compose-linkrow').innerHTML = linkRowHTML(url);
   logRound({ title, stage: 'sent', url });
   const head = title ? `5·2·1 — ${title}. ` : '5·2·1 — ';
-  shareText(`${head}I listed ${opts.length}, you keep 2: ${url}`);
+  const menu = opts.map((o, i) => `${i + 1} ${o}`).join('  ·  ');
+  finishShare(`${head}I listed ${opts.length}, you keep 2:\n${menu}\n${url}`, '#cta', 'Copied ✓ — now paste it to them');
 }
 
 function toggleKeep(btn) {
@@ -649,12 +671,13 @@ function cutShare() {
   const p = currentPayload();
   const cutter = $('#cutter-name').value.trim();
   if (cutter) store.set('name', cutter);
-  const payload = { ...p, s: 'close', c: cutter, k: [...keepSet].sort((a, b) => a - b) };
+  const kept = [...keepSet].sort((a, b) => a - b);
+  const payload = { ...p, s: 'close', c: cutter, k: kept };
   const url = linkFor(payload);
   $('#cut-linkrow').innerHTML = linkRowHTML(url);
   logRound({ title: p.t, stage: 'cut', url });
   const head = p.t ? `5·2·1 — ${p.t}. ` : '5·2·1 — ';
-  shareText(`${head}Down to 2, your call: ${url}`);
+  finishShare(`${head}I kept: ${kept.map((i) => p.o[i]).join(' + ')}. Your call:\n${url}`, '#cta', 'Copied ✓ — paste it back');
 }
 
 function pickFinal(btn) {
@@ -674,8 +697,9 @@ function pickFinal(btn) {
     <div class="card" style="text-align:center">
       <p class="lede">🏆 ${esc(p.o[finalPick])}</p>
       <p class="sub">Now the sacred final step: tell ${esc(p.c || 'them')}.</p>
-      <button class="cta" data-action="close-share">Tell ${esc(p.c || 'them')}</button>
+      <button class="cta" data-action="close-share" id="close-cta">Copy the verdict${p.c ? ' for ' + esc(p.c) : ''}</button>
       <button class="cta secondary" data-action="undo-final">wait, let me rethink</button>
+      <button class="share-alt" data-action="share-alt" hidden>📤 or send with the share sheet</button>
       <div id="close-linkrow"></div>
     </div>`;
   $('#close-after').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -687,7 +711,7 @@ function closeShare() {
   const url = linkFor(payload);
   $('#close-linkrow').innerHTML = linkRowHTML(url);
   const head = p.t ? `5·2·1 — ${p.t}: ` : '5·2·1 — ';
-  shareText(`${head}🏆 ${p.o[finalPick]}! ${url}`);
+  finishShare(`${head}🏆 ${p.o[finalPick]}!\n${url}`, '#close-cta', 'Copied ✓ — go tell them');
 }
 
 function flipCoin() {
@@ -727,6 +751,7 @@ app.addEventListener('click', (e) => {
   else if (act === 'close-share') closeShare();
   else if (act === 'done-restart') { location.hash = ''; composeCount = 5; route(); }
   else if (act === 'flip-coin') flipCoin();
+  else if (act === 'share-alt') { if (navigator.share && lastMsg) navigator.share({ text: lastMsg }).catch(() => {}); }
   else if (act === 'copy-url') {
     navigator.clipboard?.writeText(el.dataset.url).then(() => toast('Link copied ✓'), () => toast('Long-press the link to copy'));
   }
@@ -756,6 +781,31 @@ app.addEventListener('keydown', (e) => {
   if (next) next.focus();
   else e.target.blur();
 });
+/* paste a numbered list into any option field → fill the five */
+app.addEventListener('paste', (e) => {
+  const t = e.target;
+  if (!t.classList || !t.classList.contains('opt-in')) return;
+  const text = e.clipboardData?.getData('text') ?? '';
+  if (!text.includes('\n')) return;
+  e.preventDefault();
+  const raw = text.split('\n').map((s) => s.trim()).filter(Boolean);
+  if (!raw.length) return;
+  // strip leading "1", "2.", "3)" only when they're a real 1..n enumeration ("5 Guys" survives)
+  const nums = raw.map((s) => { const m = s.match(/^(\d+)[\s.):\-]+/); return m ? Number(m[1]) : null; });
+  const sequential = nums.length > 1 && nums.every((n, i) => n === i + 1);
+  const lines = sequential ? raw.map((s) => s.replace(/^\d+[\s.):\-]+\s*/, '')) : raw;
+  const start = Number(t.id.slice(3)) || 0;
+  const needed = Math.min(7, start + lines.length);
+  if (needed > composeCount) {
+    const vals = saveComposeValues();
+    composeCount = needed;
+    renderHome();
+    restoreComposeValues(vals);
+  }
+  lines.slice(0, 7 - start).forEach((l, j) => { const el = $('#opt' + (start + j)); if (el) el.value = l.slice(0, 64); });
+  toast('Filled from your list ✂️');
+});
+
 /* number keys toggle choices (desktop nicety) */
 document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT') return;
@@ -774,10 +824,10 @@ function route() {
   if (hash) {
     try { p = decodePayload(hash); } catch { renderBroken(); return; }
   }
-  if (!p) { renderHome(); return; }
-  if (p.s === 'cut' && Array.isArray(p.o) && p.o.length >= 2) renderCut(p);
-  else if (p.s === 'close' && Array.isArray(p.k) && p.k.length === 2) renderClose(p);
-  else if (p.s === 'done' && Number.isInteger(p.w) && p.o?.[p.w] !== undefined) renderDone(p);
+  if (!p) { renderHome(); document.title = '5 · 2 · 1'; return; }
+  if (p.s === 'cut' && Array.isArray(p.o) && p.o.length >= 2) { renderCut(p); document.title = `5·2·1 — ${p.t || 'your cut'}`; }
+  else if (p.s === 'close' && Array.isArray(p.k) && p.k.length === 2) { renderClose(p); document.title = `5·2·1 — ${p.t ? p.t + ' · ' : ''}your pick`; }
+  else if (p.s === 'done' && Number.isInteger(p.w) && p.o?.[p.w] !== undefined) { renderDone(p); document.title = `5·2·1 — 🏆 ${p.o[p.w]}`; }
   else renderBroken();
   scrollTo(0, 0);
 }

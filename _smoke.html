@@ -15,6 +15,15 @@ async function run() {
   A('home renders brand', !!d.querySelector('.brand'));
   A('home has 5 option inputs', d.querySelectorAll('.opt-in').length === 5);
 
+  // --- paste a numbered list into option 1 ---
+  const W = f.contentWindow;
+  const dt = new W.DataTransfer();
+  dt.setData('text/plain', '1 tacos\n2 burger place\n3. mcdonalds\n4 eat at home\n5 oyster bar');
+  const pe = new W.ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true });
+  d.querySelector('#opt0').dispatchEvent(pe);
+  await sleep(200);
+  A('paste fills the five', d.querySelector('#opt0').value === 'tacos' && d.querySelector('#opt4').value === 'oyster bar');
+
   // --- compose ---
   d.querySelector('#title-in').value = 'Dinner Friday';
   d.querySelector('#name-in').value = 'Tyler';
