@@ -655,9 +655,7 @@ function composeShare() {
   const url = linkFor(payload);
   $('#compose-linkrow').innerHTML = linkRowHTML(url);
   logRound({ title, stage: 'sent', url });
-  const head = title ? `5·2·1 — ${title}. ` : '5·2·1 — ';
-  const menu = opts.map((o, i) => `${i + 1} ${o}`).join('\n');
-  finishShare(`${head}I listed ${opts.length}, you keep 2:\n${menu}\n${url}`, '#cta', 'Copied ✓ — now paste it to them');
+  finishShare(url, '#cta', 'Copied ✓ — now paste it to them');
 }
 
 function toggleKeep(btn) {
@@ -684,8 +682,7 @@ function cutShare() {
   const url = linkFor(payload);
   $('#cut-linkrow').innerHTML = linkRowHTML(url);
   logRound({ title: p.t, stage: 'cut', url });
-  const head = p.t ? `5·2·1 — ${p.t}. ` : '5·2·1 — ';
-  finishShare(`${head}I kept: ${kept.map((i) => p.o[i]).join(' + ')}. Your call:\n${url}`, '#cta', 'Copied ✓ — paste it back');
+  finishShare(url, '#cta', 'Copied ✓ — paste it back');
 }
 
 function pickFinal(btn) {
@@ -719,8 +716,7 @@ function closeShare() {
   const payload = { ...p, s: 'done', w: finalPick };
   const url = linkFor(payload);
   $('#close-linkrow').innerHTML = linkRowHTML(url);
-  const head = p.t ? `5·2·1 — ${p.t}: ` : '5·2·1 — ';
-  finishShare(`${head}🏆 ${p.o[finalPick]}!\n${url}`, '#close-cta', 'Copied ✓ — go tell them');
+  finishShare(`🏆 ${p.o[finalPick]}! ${url}`, '#close-cta', 'Copied ✓ — go tell them');
 }
 
 /* ---------- event delegation ---------- */
