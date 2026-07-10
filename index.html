@@ -60,144 +60,151 @@
     min-height: 100dvh;
   }
   #app {
-    max-width: 480px;
+    max-width: 440px;
     margin: 0 auto;
-    padding: max(20px, env(safe-area-inset-top)) 20px calc(48px + env(safe-area-inset-bottom));
+    padding: max(10px, env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom));
   }
 
   /* ---------- brand / hero ---------- */
-  .hero { text-align: center; padding: 26px 0 8px; }
+  .hero { text-align: center; padding: 8px 0 2px; }
   .brand {
-    font-size: 54px; font-weight: 800; letter-spacing: -1px; line-height: 1;
+    font-size: 32px; font-weight: 800; letter-spacing: -0.5px; line-height: 1;
     font-variant-numeric: tabular-nums;
   }
-  .brand .dot { color: var(--accent); font-weight: 700; margin: 0 2px; }
-  .tagline { margin-top: 10px; font-size: 15px; color: var(--ink2); font-weight: 500; }
+  .brand .dot { color: var(--accent); font-weight: 700; margin: 0 1px; }
+  .tagline { margin-top: 3px; font-size: 12px; color: var(--ink2); font-weight: 500; }
 
   /* ---------- stepper ---------- */
-  .stepper { display: flex; align-items: center; justify-content: center; gap: 0; padding: 18px 0 6px; }
+  .stepper { display: flex; align-items: center; justify-content: center; gap: 0; padding: 8px 0 2px; }
   .step {
-    width: 36px; height: 36px; border-radius: 50%;
+    width: 27px; height: 27px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums;
+    font-weight: 800; font-size: 12.5px; font-variant-numeric: tabular-nums;
     border: 1.5px solid var(--hairline); color: var(--ink2); background: transparent;
     position: relative;
   }
   .step.past { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
-  .step.now { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 0 0 5px var(--accent-soft); }
-  .step-line { width: 26px; height: 1.5px; background: var(--hairline); }
+  .step.now { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 0 0 4px var(--accent-soft); }
+  .step-line { width: 20px; height: 1.5px; background: var(--hairline); }
   .step-line.past { background: var(--accent); opacity: 0.5; }
 
   /* ---------- cards ---------- */
   .card {
-    background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
-    padding: 20px; margin-top: 18px;
+    background: var(--card); border-radius: 16px; box-shadow: var(--shadow);
+    padding: 12px 14px; margin-top: 10px;
   }
-  .card h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink2); margin-bottom: 14px; }
-  .lede { font-size: 22px; font-weight: 800; line-height: 1.25; letter-spacing: -0.3px; }
-  .sub { margin-top: 6px; font-size: 15px; color: var(--ink2); line-height: 1.45; }
+  .card h2 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink2); margin-bottom: 8px; }
+  .lede { font-size: 18px; font-weight: 800; line-height: 1.2; letter-spacing: -0.2px; }
+  .sub { margin-top: 3px; font-size: 13.5px; color: var(--ink2); line-height: 1.4; }
   .title-chip {
-    display: inline-flex; align-items: center; gap: 6px; margin-top: 12px;
+    display: inline-flex; align-items: center; gap: 5px; margin-top: 7px;
     background: var(--accent-soft); color: var(--accent);
-    font-size: 14px; font-weight: 700; padding: 6px 12px; border-radius: 999px;
+    font-size: 12.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px;
   }
 
   /* ---------- compose ---------- */
-  .field-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink2); margin: 16px 0 6px; }
+  .field-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink2); margin: 10px 0 2px; }
   .field-label:first-child { margin-top: 0; }
   input.text-in {
     width: 100%; min-width: 0; border: none; outline: none; background: transparent;
-    font: inherit; font-size: 17px; font-weight: 600; color: var(--ink);
-    padding: 8px 0; border-bottom: 1.5px solid var(--hairline);
+    font: inherit; font-size: 16px; font-weight: 600; color: var(--ink);
+    padding: 5px 0; border-bottom: 1.5px solid var(--hairline);
     border-radius: 0; caret-color: var(--accent);
   }
   input.text-in:focus { border-bottom-color: var(--accent); }
   input.text-in::placeholder { color: var(--ink2); opacity: 0.55; font-weight: 500; }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .chip {
-    border: none; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
-    background: var(--card2); color: var(--ink); padding: 8px 13px; border-radius: 999px;
+    border: none; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    background: var(--card2); color: var(--ink); padding: 5px 10px; border-radius: 999px;
     transition: transform 0.15s ease;
   }
   .chip:active { transform: scale(0.94); }
-  .opt-row { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+  .opt-row { display: flex; align-items: center; gap: 10px; }
   .opt-num {
-    width: 28px; height: 28px; border-radius: 50%; flex: none;
+    width: 20px; height: 20px; border-radius: 50%; flex: none;
     background: var(--card2); color: var(--ink2);
     display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums;
+    font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums;
   }
   .add-opt {
-    margin-top: 14px; background: none; border: none; font: inherit; cursor: pointer;
-    font-size: 14px; font-weight: 700; color: var(--accent); padding: 4px 0;
+    margin-top: 8px; background: none; border: none; font: inherit; cursor: pointer;
+    font-size: 13px; font-weight: 700; color: var(--accent); padding: 2px 0;
   }
-  .duo { display: flex; gap: 14px; margin-top: 16px; }
+  .duo { display: flex; gap: 12px; margin-top: 8px; }
   .duo > div { flex: 1; min-width: 0; }
   .share-alt {
-    display: block; margin: 12px auto 0; background: none; border: none; cursor: pointer;
-    font: inherit; font-size: 14px; font-weight: 700; color: var(--accent);
+    display: block; margin: 8px auto 0; background: none; border: none; cursor: pointer;
+    font: inherit; font-size: 12.5px; font-weight: 700; color: var(--accent);
   }
   .share-alt[hidden] { display: none; }
-  .form-error { margin-top: 12px; font-size: 14px; font-weight: 600; color: var(--accent); display: none; }
+  .form-error { margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--accent); display: none; }
   .form-error.show { display: block; }
 
   /* ---------- choice cards ---------- */
-  .choices { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .choices { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .choice-row { display: flex; align-items: stretch; gap: 6px; }
+  .choice-row .choice { flex: 1; min-width: 0; }
+  .mapbtn {
+    flex: none; width: 36px; display: flex; align-items: center; justify-content: center;
+    background: var(--card); border-radius: 12px; box-shadow: var(--shadow);
+    text-decoration: none; font-size: 15px;
+  }
   .choice {
-    display: flex; align-items: center; gap: 14px; text-align: left;
-    background: var(--card); border: 2px solid transparent; border-radius: 18px;
-    box-shadow: var(--shadow); padding: 14px 16px; cursor: pointer;
+    display: flex; align-items: center; gap: 10px; text-align: left;
+    background: var(--card); border: 2px solid transparent; border-radius: 14px;
+    box-shadow: var(--shadow); padding: 8px 11px; cursor: pointer;
     font: inherit; color: var(--ink); width: 100%;
     transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.15s ease, box-shadow 0.25s ease, opacity 0.3s ease;
     animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
   }
   .choice:active { transform: scale(0.975); }
   .choice .emoji {
-    width: 46px; height: 46px; border-radius: 14px; flex: none; background: var(--card2);
-    display: flex; align-items: center; justify-content: center; font-size: 24px;
+    width: 34px; height: 34px; border-radius: 10px; flex: none; background: var(--card2);
+    display: flex; align-items: center; justify-content: center; font-size: 19px;
   }
-  .choice .label { flex: 1; font-size: 17px; font-weight: 650; line-height: 1.3; overflow-wrap: anywhere; }
+  .choice .label { flex: 1; font-size: 15.5px; font-weight: 650; line-height: 1.25; overflow-wrap: anywhere; }
   .choice .badge {
-    flex: none; font-size: 11px; font-weight: 800; letter-spacing: 0.06em;
-    background: var(--accent); color: #fff; border-radius: 999px; padding: 5px 10px;
+    flex: none; font-size: 10px; font-weight: 800; letter-spacing: 0.06em;
+    background: var(--accent); color: #fff; border-radius: 999px; padding: 3px 8px;
     opacity: 0; transform: scale(0.6); transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-  .choice.kept { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-pick); }
+  .choice.kept { border-color: var(--accent); transform: translateY(-1px); box-shadow: var(--shadow-pick); }
   .choice.kept .badge { opacity: 1; transform: scale(1); }
   .choice.dimmed { opacity: 0.38; }
   .choice.winner { border-color: var(--accent); box-shadow: var(--shadow-pick); }
   @keyframes rise { from { opacity: 0; transform: translateY(16px); } }
 
-  .keep-counter { margin-top: 16px; text-align: center; font-size: 14px; font-weight: 700; color: var(--ink2); }
+  .keep-counter { margin-top: 8px; text-align: center; font-size: 12.5px; font-weight: 700; color: var(--ink2); }
   .keep-counter .full { color: var(--good); }
 
   /* ---------- CTA + buttons ---------- */
   .cta {
     display: flex; align-items: center; justify-content: center; width: 100%;
-    margin-top: 18px; padding: 17px; border: none; border-radius: 17px; cursor: pointer;
-    font: inherit; font-size: 17px; font-weight: 750; color: #fff;
+    margin-top: 10px; padding: 12px; border: none; border-radius: 13px; cursor: pointer;
+    font: inherit; font-size: 15.5px; font-weight: 750; color: #fff;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
-    box-shadow: 0 8px 22px rgba(226, 89, 58, 0.35);
+    box-shadow: 0 6px 16px rgba(226, 89, 58, 0.3);
     transition: transform 0.15s ease, opacity 0.2s ease;
   }
   .cta:active { transform: scale(0.975); }
   .cta:disabled { opacity: 0.35; box-shadow: none; cursor: default; }
   .cta.secondary { background: var(--card2); color: var(--ink); box-shadow: none; }
   .linkrow {
-    display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 12px;
-    background: var(--card2); border: none; border-radius: 13px; padding: 12px 14px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+    display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 8px;
+    background: var(--card2); border: none; border-radius: 10px; padding: 8px 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px;
     color: var(--ink2); cursor: pointer; text-align: left;
   }
   .linkrow .trunc { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .hint {
-    margin-top: 14px; font-size: 13px; font-weight: 600; color: var(--ink2);
-    background: var(--card2); border-radius: 12px; padding: 10px 13px; line-height: 1.45;
+    margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--ink2);
+    background: var(--card2); border-radius: 10px; padding: 7px 10px; line-height: 1.4;
   }
 
   /* ---------- coin ---------- */
-  .coin-area { display: flex; align-items: center; gap: 18px; }
-  .coin-scene { width: 74px; height: 74px; flex: none; perspective: 500px; }
+  .coin-area { display: flex; align-items: center; gap: 12px; }
+  .coin-scene { width: 52px; height: 52px; flex: none; perspective: 400px; }
   .coin {
     width: 100%; height: 100%; position: relative; transform-style: preserve-3d;
     transition: transform 1.7s cubic-bezier(0.18, 0.75, 0.25, 1);
@@ -205,55 +212,55 @@
   .coin .face {
     position: absolute; inset: 0; border-radius: 50%; backface-visibility: hidden;
     display: flex; align-items: center; justify-content: center;
-    font-size: 26px; font-weight: 800; color: #fff;
+    font-size: 18px; font-weight: 800; color: #fff;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
-    box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.25);
+    box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.25);
   }
   .coin .face.back { transform: rotateY(180deg); background: linear-gradient(135deg, #7A66D9, #4FA3D9); }
   .coin-side { flex: 1; }
-  .coin-names { display: flex; gap: 8px; margin-bottom: 10px; }
-  .coin-names input { width: 50%; font-size: 15px; }
-  .coin-result { margin-top: 10px; font-size: 15px; font-weight: 700; min-height: 20px; }
+  .coin-names { display: flex; gap: 8px; margin-bottom: 4px; }
+  .coin-names input { width: 50%; font-size: 14px; }
+  .coin-result { margin-top: 6px; font-size: 13px; font-weight: 700; min-height: 16px; }
   .btn-small {
     background: var(--accent-soft); color: var(--accent); border: none; border-radius: 999px;
-    font: inherit; font-size: 14px; font-weight: 750; padding: 9px 16px; cursor: pointer;
+    font: inherit; font-size: 12.5px; font-weight: 750; padding: 6px 12px; cursor: pointer;
     transition: transform 0.15s ease;
   }
   .btn-small:active { transform: scale(0.94); }
 
   /* ---------- history ---------- */
   .hist-row {
-    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
     background: none; border: none; font: inherit; color: var(--ink); cursor: pointer;
-    padding: 10px 2px; border-bottom: 1px solid var(--hairline);
+    padding: 6px 2px; border-bottom: 1px solid var(--hairline);
   }
   .hist-row:last-child { border-bottom: none; }
-  .hist-emoji { font-size: 20px; flex: none; }
+  .hist-emoji { font-size: 16px; flex: none; }
   .hist-main { flex: 1; min-width: 0; }
-  .hist-title { font-size: 15px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .hist-state { font-size: 13px; color: var(--ink2); font-weight: 500; margin-top: 1px; }
-  .hist-date { font-size: 12px; color: var(--ink2); flex: none; }
+  .hist-title { font-size: 14px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hist-state { font-size: 11.5px; color: var(--ink2); font-weight: 500; margin-top: 1px; }
+  .hist-date { font-size: 11px; color: var(--ink2); flex: none; }
 
   /* ---------- winner / done ---------- */
-  .winner-stage { text-align: center; padding: 10px 0 4px; }
-  .trophy { font-size: 58px; animation: pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; }
-  .winner-name { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; margin-top: 10px; overflow-wrap: anywhere; }
-  .winner-sub { margin-top: 8px; font-size: 15px; color: var(--ink2); font-weight: 550; }
-  .ritual-note { margin-top: 18px; font-size: 13px; color: var(--ink2); }
+  .winner-stage { text-align: center; padding: 4px 0 2px; }
+  .trophy { font-size: 42px; animation: pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; }
+  .winner-name { font-size: 23px; font-weight: 800; letter-spacing: -0.4px; margin-top: 6px; overflow-wrap: anywhere; }
+  .winner-sub { margin-top: 4px; font-size: 13.5px; color: var(--ink2); font-weight: 550; }
+  .ritual-note { margin-top: 10px; font-size: 11.5px; color: var(--ink2); }
   @keyframes pop { from { opacity: 0; transform: scale(0.3); } }
 
   /* ---------- footer / misc ---------- */
   .house-rule {
-    margin-top: 26px; text-align: center; font-size: 13px; color: var(--ink2);
-    font-weight: 550; line-height: 1.5; padding: 0 12px;
+    margin-top: 12px; text-align: center; font-size: 11.5px; color: var(--ink2);
+    font-weight: 550; line-height: 1.45; padding: 0 12px;
   }
   .house-rule b { color: var(--accent); font-weight: 750; }
-  details.explain { margin-top: 16px; }
+  details.explain { margin-top: 10px; }
   details.explain summary {
-    font-size: 13px; font-weight: 700; color: var(--ink2); cursor: pointer; list-style: none;
+    font-size: 12px; font-weight: 700; color: var(--ink2); cursor: pointer; list-style: none;
   }
   details.explain summary::before { content: "ⓘ "; }
-  details.explain p { margin-top: 8px; font-size: 13.5px; color: var(--ink2); line-height: 1.55; }
+  details.explain p { margin-top: 5px; font-size: 12.5px; color: var(--ink2); line-height: 1.5; }
   .toast {
     position: fixed; left: 50%; bottom: calc(28px + env(safe-area-inset-bottom));
     transform: translateX(-50%) translateY(8px); z-index: 60;
@@ -349,6 +356,8 @@ const EMOJI_RULES = [
   [/concert|music|jazz|gig\b/i, '🎶'],
 ];
 const EMOJI_FALLBACK = ['🍽️', '✨', '🎲', '🌟', '💫', '🧭', '🎁'];
+/* plain Google Maps search deep link — no API, no key; iOS opens the Maps app */
+const mapsUrl = (name) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(name);
 function emojiFor(text, i) {
   for (const [re, e] of EMOJI_RULES) if (re.test(text)) return e;
   return EMOJI_FALLBACK[i % EMOJI_FALLBACK.length];
@@ -543,11 +552,14 @@ function renderCut(p) {
     </div>
     <div class="choices">
       ${p.o.map((opt, i) => `
-        <button class="choice" data-action="toggle-keep" data-i="${i}" style="animation-delay:${i * 55}ms">
-          <span class="emoji">${emojiFor(opt, i)}</span>
-          <span class="label">${esc(opt)}</span>
-          <span class="badge">KEEP ✓</span>
-        </button>`).join('')}
+        <div class="choice-row">
+          <button class="choice" data-action="toggle-keep" data-i="${i}" style="animation-delay:${i * 55}ms">
+            <span class="emoji">${emojiFor(opt, i)}</span>
+            <span class="label">${esc(opt)}</span>
+            <span class="badge">KEEP ✓</span>
+          </button>
+          <a class="mapbtn" href="${mapsUrl(opt)}" target="_blank" rel="noopener" aria-label="open ${esc(opt)} in Maps">📍</a>
+        </div>`).join('')}
     </div>
     <div class="keep-counter" id="keep-counter">0 of 2 kept</div>
     <div class="card">
@@ -576,11 +588,14 @@ function renderClose(p) {
     </div>
     <div class="choices" id="final-choices">
       ${kept.map(({ i, text }, j) => `
-        <button class="choice" data-action="pick-final" data-i="${i}" style="animation-delay:${j * 90}ms">
-          <span class="emoji">${emojiFor(text, i)}</span>
-          <span class="label">${esc(text)}</span>
-          <span class="badge">🏆</span>
-        </button>`).join('')}
+        <div class="choice-row">
+          <button class="choice" data-action="pick-final" data-i="${i}" style="animation-delay:${j * 90}ms">
+            <span class="emoji">${emojiFor(text, i)}</span>
+            <span class="label">${esc(text)}</span>
+            <span class="badge">🏆</span>
+          </button>
+          <a class="mapbtn" href="${mapsUrl(text)}" target="_blank" rel="noopener" aria-label="open ${esc(text)} in Maps">📍</a>
+        </div>`).join('')}
     </div>
     <div id="close-after"></div>
     <details class="explain"><summary>The other three</summary>
