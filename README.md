@@ -25,8 +25,9 @@ just run          # same, once `just` is installed
 
 ## Deploy
 
+**Live at https://tylerwhughes.com/521/** (GitHub Pages, `twhughes/521`, branch `main`).
 Any static host works — it's one `index.html` with zero dependencies.
-Target: GitHub Pages (the repo holds only generic app code; see PLAN.md M2).
+The repo holds only generic app code; round data exists only in the links people text each other.
 
 ## Lineage
 
