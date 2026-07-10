@@ -129,7 +129,7 @@
   }
   .add-opt {
     margin-top: 8px; background: none; border: none; font: inherit; cursor: pointer;
-    font-size: 13px; font-weight: 700; color: var(--accent); padding: 2px 0;
+    font-size: 11.5px; font-weight: 600; color: var(--ink2); opacity: 0.65; padding: 2px 0;
   }
   .duo { display: flex; gap: 12px; margin-top: 8px; }
   .duo > div { flex: 1; min-width: 0; }
@@ -483,7 +483,7 @@ function renderHome() {
       <h2>Start a round</h2>
       <div class="field-label">Your five <span style="opacity:.6">(paste a numbered list — it fills itself)</span></div>
       ${optRows}
-      ${composeCount < 7 ? '<button class="add-opt" data-action="add-option">+ one more</button>' : ''}
+      ${composeCount < 6 ? '<button class="add-opt" data-action="add-option">+ a 6th — that’s cheating, but fine</button>' : ''}
       <div class="duo">
         <div>
           <div class="field-label">Title — optional</div>
@@ -757,7 +757,7 @@ app.addEventListener('click', (e) => {
   if (!el) return;
   const act = el.dataset.action;
   if (act === 'chip-title') { $('#title-in').value = el.dataset.title; }
-  else if (act === 'add-option') { composeCount = Math.min(7, composeCount + 1); const vals = saveComposeValues(); renderHome(); restoreComposeValues(vals); }
+  else if (act === 'add-option') { composeCount = Math.min(6, composeCount + 1); const vals = saveComposeValues(); renderHome(); restoreComposeValues(vals); toast('The ritual is five. Desperation noted 😌'); }
   else if (act === 'compose-share') composeShare();
   else if (act === 'toggle-keep') toggleKeep(el);
   else if (act === 'cut-share') cutShare();
@@ -810,14 +810,14 @@ app.addEventListener('paste', (e) => {
   const sequential = nums.length > 1 && nums.every((n, i) => n === i + 1);
   const lines = sequential ? raw.map((s) => s.replace(/^\d+[\s.):\-]+\s*/, '')) : raw;
   const start = Number(t.id.slice(3)) || 0;
-  const needed = Math.min(7, start + lines.length);
+  const needed = Math.min(6, start + lines.length);
   if (needed > composeCount) {
     const vals = saveComposeValues();
     composeCount = needed;
     renderHome();
     restoreComposeValues(vals);
   }
-  lines.slice(0, 7 - start).forEach((l, j) => { const el = $('#opt' + (start + j)); if (el) el.value = l.slice(0, 64); });
+  lines.slice(0, 6 - start).forEach((l, j) => { const el = $('#opt' + (start + j)); if (el) el.value = l.slice(0, 64); });
   toast('Filled from your list ✂️');
 });
 
