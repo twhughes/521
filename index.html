@@ -357,15 +357,16 @@ const mapsUrl = (name) => 'https://www.google.com/maps/search/?api=1&query=' + e
    Geocoding: Nominatim hard-bounded to ~13km around the user (exact hits),
    then Photon fuzzy fallback accepted only on a strict name match inside the
    same box. Options the map can't place keep their 📍 → Google Maps app. */
+const MAP_VIEW = false; // deferred 2026-07-10: OSM pin coverage wasn't good enough in practice
 const geo = { map: null, markers: {}, loc: null, run: 0 };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const normName = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
 const dist2 = (a, b) => (a.lat - b.lat) ** 2 + (a.lon - b.lon) ** 2;
-const geoPanelHTML = () => `
+const geoPanelHTML = () => MAP_VIEW ? `
   <div class="card geo-card" id="geo-panel">
     <div id="geo-map"></div>
     <div class="geo-foot"><span id="geo-status">finding you…</span><span>© OpenStreetMap</span></div>
-  </div>`;
+  </div>` : '';
 const pinIcon = (n) => L.divIcon({ className: '', html: `<div class="pin-num">${n}</div>`, iconSize: [26, 26], iconAnchor: [13, 13] });
 function getLocation() {
   return new Promise((res) => {
@@ -398,7 +399,7 @@ async function geocodeNear(name, loc) {
 }
 async function initGeo(p, idxs) {
   const status = $('#geo-status');
-  if (!$('#geo-map') || typeof L === 'undefined') return;
+  if (!MAP_VIEW || !$('#geo-map') || typeof L === 'undefined') return;
   const run = ++geo.run;
   geo.markers = {};
   geo.loc = await getLocation();

@@ -41,7 +41,7 @@ async function run() {
   d = f.contentDocument;
   A('cut renders 5 choices', d.querySelectorAll('.choices .choice').length === 5);
   A('cut has 5 map pins', d.querySelectorAll('.choices .mapbtn').length === 5);
-  A('rendered map panel present', !!d.querySelector('#geo-panel') && !!d.querySelector('#geo-map'));
+  A('map view deferred (no panel)', !d.querySelector('#geo-panel'));
   A('cut names the lister', d.body.textContent.includes('Tyler listed 5'));
   A('cut emoji matched sushi', d.body.textContent.includes('🍣'));
   A('cut cta starts disabled', d.querySelector('#cta').disabled === true);
