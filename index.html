@@ -147,9 +147,10 @@
   .choice-row .choice { flex: 1; min-width: 0; }
   .mapbtn {
     flex: none; width: 36px; display: flex; align-items: center; justify-content: center;
-    background: var(--card); border-radius: 12px; box-shadow: var(--shadow);
-    text-decoration: none; font-size: 15px;
+    background: var(--card); border: none; border-radius: 12px; box-shadow: var(--shadow);
+    cursor: pointer; font: inherit; font-size: 15px;
   }
+  .dimmed-row { opacity: 0.35; }
   .choice {
     display: flex; align-items: center; gap: 10px; text-align: left;
     background: var(--card); border: 2px solid transparent; border-radius: 14px;
@@ -202,31 +203,15 @@
     background: var(--card2); border-radius: 10px; padding: 7px 10px; line-height: 1.4;
   }
 
-  /* ---------- coin ---------- */
-  .coin-area { display: flex; align-items: center; gap: 12px; }
-  .coin-scene { width: 52px; height: 52px; flex: none; perspective: 400px; }
-  .coin {
-    width: 100%; height: 100%; position: relative; transform-style: preserve-3d;
-    transition: transform 1.7s cubic-bezier(0.18, 0.75, 0.25, 1);
+  /* ---------- inline map ---------- */
+  .map-card { padding: 5px; }
+  .map-card iframe { width: 100%; height: 185px; border: 0; border-radius: 12px; display: block; background: var(--card2); }
+  .map-foot {
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    padding: 5px 7px 2px; font-size: 12px; font-weight: 650; color: var(--ink2);
   }
-  .coin .face {
-    position: absolute; inset: 0; border-radius: 50%; backface-visibility: hidden;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px; font-weight: 800; color: #fff;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.25);
-  }
-  .coin .face.back { transform: rotateY(180deg); background: linear-gradient(135deg, #7A66D9, #4FA3D9); }
-  .coin-side { flex: 1; }
-  .coin-names { display: flex; gap: 8px; margin-bottom: 4px; }
-  .coin-names input { width: 50%; font-size: 14px; }
-  .coin-result { margin-top: 6px; font-size: 13px; font-weight: 700; min-height: 16px; }
-  .btn-small {
-    background: var(--accent-soft); color: var(--accent); border: none; border-radius: 999px;
-    font: inherit; font-size: 12.5px; font-weight: 750; padding: 6px 12px; cursor: pointer;
-    transition: transform 0.15s ease;
-  }
-  .btn-small:active { transform: scale(0.94); }
+  .map-foot .q { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .map-foot a { color: var(--accent); text-decoration: none; font-weight: 750; flex: none; }
 
   /* ---------- history ---------- */
   .hist-row {
@@ -358,6 +343,26 @@ const EMOJI_RULES = [
 const EMOJI_FALLBACK = ['🍽️', '✨', '🎲', '🌟', '💫', '🧭', '🎁'];
 /* plain Google Maps search deep link — no API, no key; iOS opens the Maps app */
 const mapsUrl = (name) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(name);
+/* keyless Maps embed endpoint (what maps.google.com/maps?...&output=embed 301s to) */
+const mapsEmbedUrl = (name) => 'https://www.google.com/maps/embed?origin=mfe&pb=!1m2!2m1!1s' + encodeURIComponent(name);
+
+/* ---------- inline map panel (cut + close views) ---------- */
+let mapIdx = null;
+const mapPanelHTML = () => `
+  <div class="card map-card" id="map-panel" hidden>
+    <iframe id="map-frame" src="about:blank" loading="lazy" referrerpolicy="no-referrer" allowfullscreen></iframe>
+    <div class="map-foot"><span class="q" id="map-q"></span><a id="map-open" href="#" target="_blank" rel="noopener">open in Maps ↗</a></div>
+  </div>`;
+function showMap(i) {
+  const p = currentPayload();
+  const panel = $('#map-panel');
+  if (!p || p.o?.[i] === undefined || !panel) return;
+  mapIdx = i;
+  panel.hidden = false;
+  $('#map-frame').src = mapsEmbedUrl(p.o[i]);
+  $('#map-q').textContent = '📍 ' + p.o[i];
+  $('#map-open').href = mapsUrl(p.o[i]);
+}
 function emojiFor(text, i) {
   for (const [re, e] of EMOJI_RULES) if (re.test(text)) return e;
   return EMOJI_FALLBACK[i % EMOJI_FALLBACK.length];
@@ -464,7 +469,6 @@ const OPT_PLACEHOLDERS = ['that sushi place', 'the thai spot', 'tacos obviously'
 
 function renderHome() {
   const name = store.get('name', '');
-  const partner = store.get('partner', '');
   const history = store.get('history', []);
   const optRows = Array.from({ length: composeCount }, (_, i) => `
     <div class="opt-row">
@@ -506,24 +510,6 @@ function renderHome() {
       <div id="compose-linkrow"></div>
     </div>
 
-    <div class="card">
-      <h2>Who lists tonight?</h2>
-      <div class="coin-area">
-        <div class="coin-scene"><div class="coin" id="coin">
-          <div class="face front" id="coin-front">${esc((name || 'A')[0].toUpperCase())}</div>
-          <div class="face back" id="coin-back">${esc((partner || 'B')[0].toUpperCase())}</div>
-        </div></div>
-        <div class="coin-side">
-          <div class="coin-names">
-            <input class="text-in" id="coin-me" maxlength="24" placeholder="you" value="${esc(name)}">
-            <input class="text-in" id="coin-them" maxlength="24" placeholder="them" value="${esc(partner)}">
-          </div>
-          <button class="btn-small" data-action="flip-coin" id="flip-btn">Flip</button>
-          <div class="coin-result" id="coin-result"></div>
-        </div>
-      </div>
-    </div>
-
     ${history.length ? `<div class="card"><h2>Recent rounds</h2>${history.map((h, i) => `
       <button class="hist-row" data-action="open-history" data-i="${i}">
         <span class="hist-emoji">${h.winner ? '🏆' : emojiFor(h.title || '', i)}</span>
@@ -550,6 +536,7 @@ function renderCut(p) {
       ${p.t ? `<span class="title-chip">${emojiFor(p.t, 0)} ${esc(p.t)}</span>` : ''}
       ${forSelf ? `<div class="hint">This is your own list — this link was meant for your partner 😉</div>` : ''}
     </div>
+    ${mapPanelHTML()}
     <div class="choices">
       ${p.o.map((opt, i) => `
         <div class="choice-row">
@@ -558,7 +545,7 @@ function renderCut(p) {
             <span class="label">${esc(opt)}</span>
             <span class="badge">KEEP ✓</span>
           </button>
-          <a class="mapbtn" href="${mapsUrl(opt)}" target="_blank" rel="noopener" aria-label="open ${esc(opt)} in Maps">📍</a>
+          <button class="mapbtn" data-action="show-map" data-i="${i}" aria-label="show ${esc(opt)} on the map">📍</button>
         </div>`).join('')}
     </div>
     <div class="keep-counter" id="keep-counter">0 of 2 kept</div>
@@ -586,6 +573,7 @@ function renderClose(p) {
       <p class="sub">Your call${p.l ? ', ' + esc(p.l) : ''}. Pick the winner.</p>
       ${p.t ? `<span class="title-chip">${emojiFor(p.t, 0)} ${esc(p.t)}</span>` : ''}
     </div>
+    ${mapPanelHTML()}
     <div class="choices" id="final-choices">
       ${kept.map(({ i, text }, j) => `
         <div class="choice-row">
@@ -594,7 +582,7 @@ function renderClose(p) {
             <span class="label">${esc(text)}</span>
             <span class="badge">🏆</span>
           </button>
-          <a class="mapbtn" href="${mapsUrl(text)}" target="_blank" rel="noopener" aria-label="open ${esc(text)} in Maps">📍</a>
+          <button class="mapbtn" data-action="show-map" data-i="${i}" aria-label="show ${esc(text)} on the map">📍</button>
         </div>`).join('')}
     </div>
     <div id="close-after"></div>
@@ -680,6 +668,11 @@ function toggleKeep(btn) {
   const counter = $('#keep-counter');
   counter.innerHTML = keepSet.size === 2 ? '<span class="full">2 of 2 kept ✓</span>' : `${keepSet.size} of 2 kept`;
   $('#cta').disabled = keepSet.size !== 2;
+  document.querySelectorAll('.choices .choice').forEach((c) => {
+    const dim = keepSet.size === 2 && !keepSet.has(Number(c.dataset.i));
+    c.closest('.choice-row').classList.toggle('dimmed-row', dim);
+  });
+  if (keepSet.size === 2 && mapIdx !== null && !keepSet.has(mapIdx)) showMap(i);
 }
 
 function cutShare() {
@@ -701,9 +694,10 @@ function pickFinal(btn) {
   const p = currentPayload();
   document.querySelectorAll('#final-choices .choice').forEach((c) => {
     if (Number(c.dataset.i) === finalPick) c.classList.add('winner', 'kept');
-    else c.classList.add('dimmed');
+    else { c.classList.add('dimmed'); c.closest('.choice-row').classList.add('dimmed-row'); }
     c.disabled = true;
   });
+  if (mapIdx !== null) showMap(finalPick);
   confetti();
   const payload = { ...p, s: 'done', w: finalPick };
   const url = linkFor(payload);
@@ -729,28 +723,6 @@ function closeShare() {
   finishShare(`${head}🏆 ${p.o[finalPick]}!\n${url}`, '#close-cta', 'Copied ✓ — go tell them');
 }
 
-function flipCoin() {
-  const me = $('#coin-me').value.trim() || 'You';
-  const them = $('#coin-them').value.trim() || 'Them';
-  store.set('name', $('#coin-me').value.trim() || store.get('name', ''));
-  store.set('partner', $('#coin-them').value.trim() || store.get('partner', ''));
-  $('#coin-front').textContent = me[0].toUpperCase();
-  $('#coin-back').textContent = them[0].toUpperCase();
-  const coin = $('#coin');
-  const tails = Math.random() < 0.5;
-  const result = $('#coin-result');
-  result.textContent = '';
-  coin.style.transition = 'none';
-  coin.style.transform = 'rotateY(0deg)';
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    coin.style.transition = '';
-    coin.style.transform = `rotateY(${1800 + (tails ? 180 : 0)}deg)`;
-    setTimeout(() => {
-      result.textContent = `${tails ? them : me} lists 5 ✨`;
-    }, 1750);
-  }));
-}
-
 /* ---------- event delegation ---------- */
 app.addEventListener('click', (e) => {
   const el = e.target.closest('[data-action]');
@@ -765,7 +737,7 @@ app.addEventListener('click', (e) => {
   else if (act === 'undo-final') { finalPick = null; route(); }
   else if (act === 'close-share') closeShare();
   else if (act === 'done-restart') { location.hash = ''; composeCount = 5; route(); }
-  else if (act === 'flip-coin') flipCoin();
+  else if (act === 'show-map') showMap(Number(el.dataset.i));
   else if (act === 'share-alt') { if (navigator.share && lastMsg) navigator.share({ text: lastMsg }).catch(() => {}); }
   else if (act === 'copy-url') {
     navigator.clipboard?.writeText(el.dataset.url).then(() => toast('Link copied ✓'), () => toast('Long-press the link to copy'));
@@ -833,7 +805,7 @@ document.addEventListener('keydown', (e) => {
 
 /* ---------- router ---------- */
 function route() {
-  keepSet = new Set(); finalPick = null;
+  keepSet = new Set(); finalPick = null; mapIdx = null;
   let p = null;
   const hash = location.hash.slice(1);
   if (hash) {
