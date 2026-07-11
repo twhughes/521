@@ -29,6 +29,20 @@ async function run() {
   d.querySelector('#name-in').value = 'Tyler';
   const opts = ['Sushi Yasaka', 'Thai Market', 'Pisticci', 'Shake Shack', 'Taqueria y Fonda'];
   opts.forEach((o, i) => { d.querySelector('#opt' + i).value = o; });
+
+  // --- emoji picker: explicit pick on option 4, option 5 becomes emoji-only ---
+  d.querySelectorAll('.emoji-btn')[3].click();
+  await sleep(100);
+  A('emoji palette opens', !!d.querySelector('.emoji-palette'));
+  d.querySelector('.pal-cell[data-e="🌮"]').click();
+  await sleep(100);
+  A('palette closes on pick', !d.querySelector('.emoji-palette'));
+  A('picked emoji shows on its button', d.querySelectorAll('.emoji-btn')[3].textContent === '🌮');
+  d.querySelectorAll('.emoji-btn')[4].click();
+  await sleep(100);
+  d.querySelector('.pal-cell[data-e="🦪"]').click();
+  await sleep(100);
+  d.querySelector('#opt4').value = ''; // just the emoji — still a valid option
   d.querySelector('[data-action="compose-share"]').click();
   await sleep(400);
   const cutUrl = d.querySelector('#compose-linkrow #share-url')?.dataset.url || '';
@@ -44,6 +58,10 @@ async function run() {
   A('map view deferred (no panel)', !d.querySelector('#geo-panel'));
   A('cut names the lister', d.body.textContent.includes('Tyler listed 5'));
   A('cut emoji matched sushi', d.body.textContent.includes('🍣'));
+  const shakeRow = [...d.querySelectorAll('.choices .choice')].find((c) => c.querySelector('.emoji').textContent === '🌮');
+  A('picked emoji overrides auto, label stays clean', !!shakeRow && shakeRow.querySelector('.label').textContent === 'Shake Shack');
+  A('emoji-only option is a full choice', [...d.querySelectorAll('.choices .choice')].some((c) => c.querySelector('.emoji').textContent === '🦪'));
+  A('map buttons use external-link icon', d.querySelectorAll('.choices .mapbtn svg').length === 5);
   A('cut cta starts disabled', d.querySelector('#cta').disabled === true);
   const cards = d.querySelectorAll('.choices .choice');
   cards[0].click(); cards[1].click();

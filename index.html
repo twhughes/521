@@ -121,13 +121,35 @@
     transition: transform 0.15s ease;
   }
   .chip:active { transform: scale(0.94); }
-  .opt-row { display: flex; align-items: center; gap: 10px; }
+  .opt-row { display: flex; align-items: center; gap: 8px; }
   .opt-num {
     width: 20px; height: 20px; border-radius: 50%; flex: none;
     background: var(--card2); color: var(--ink2);
     display: flex; align-items: center; justify-content: center;
     font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums;
   }
+  .emoji-btn {
+    width: 30px; height: 30px; border-radius: 9px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--card2); border: none; cursor: pointer;
+    font: inherit; font-size: 16px; color: var(--ink2);
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+  .emoji-btn:active { transform: scale(0.9); }
+  .emoji-btn.auto { opacity: 0.45; }
+  .emoji-btn.set { background: var(--accent-soft); }
+  .emoji-palette {
+    display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px;
+    background: var(--card2); border-radius: 12px; padding: 6px;
+    margin: 6px 0 4px 28px;
+    animation: rise 0.25s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+  .pal-cell {
+    background: none; border: none; font: inherit; font-size: 18px;
+    padding: 4px 0; cursor: pointer; border-radius: 8px; line-height: 1.3;
+  }
+  .pal-cell:active { background: var(--accent-soft); transform: scale(0.9); }
+  .pal-auto { font-size: 9.5px; font-weight: 700; color: var(--ink2); text-transform: uppercase; letter-spacing: 0.04em; }
   .add-opt {
     margin-top: 8px; background: none; border: none; font: inherit; cursor: pointer;
     font-size: 11.5px; font-weight: 600; color: var(--ink2); opacity: 0.65; padding: 2px 0;
@@ -149,7 +171,7 @@
   .mapbtn {
     flex: none; width: 36px; display: flex; align-items: center; justify-content: center;
     background: var(--card); border: none; border-radius: 12px; box-shadow: var(--shadow);
-    cursor: pointer; font: inherit; font-size: 15px;
+    cursor: pointer; font: inherit; color: var(--ink2);
   }
   .dimmed-row { opacity: 0.35; }
   .choice {
@@ -406,7 +428,7 @@ async function initGeo(p, idxs) {
   if (run !== geo.run || !$('#geo-map')) return;
   if (!geo.loc) {
     $('#geo-panel').classList.add('geo-off');
-    status.textContent = 'no location, no pins — the 📍 buttons still work';
+    status.textContent = 'no location, no pins — the ↗ buttons still work';
     return;
   }
   geo.map = L.map($('#geo-map'), { zoomControl: false, attributionControl: false });
@@ -417,11 +439,11 @@ async function initGeo(p, idxs) {
   for (let k = 0; k < idxs.length; k++) {
     const i = idxs[k];
     status.textContent = `placing ${k + 1} of ${idxs.length}…`;
-    const c = await geocodeNear(p.o[i], geo.loc);
+    const c = await geocodeNear(optName(p.o[i]), geo.loc);
     if (run !== geo.run || !geo.map) return;
     if (c) {
       geo.markers[i] = L.marker([c.lat, c.lon], { icon: pinIcon(i + 1) }).addTo(geo.map)
-        .bindPopup(`<b>${esc(p.o[i])}</b><br><a href="${mapsUrl(p.o[i])}" target="_blank" rel="noopener">open in Maps ↗</a>`);
+        .bindPopup(`<b>${esc(optName(p.o[i]))}</b><br><a href="${mapsUrl(optName(p.o[i]))}" target="_blank" rel="noopener">open in Maps ↗</a>`);
       pts.push([c.lat, c.lon]);
       placed++;
       if (pts.length > 1) geo.map.fitBounds(pts, { padding: [30, 30], maxZoom: 15 });
@@ -429,7 +451,7 @@ async function initGeo(p, idxs) {
     }
     if (k < idxs.length - 1) await wait(1100); // Nominatim politeness: ≤1 req/s
   }
-  status.textContent = placed === idxs.length ? `all ${placed} on the map` : `${placed} of ${idxs.length} on the map — the rest open via their 📍`;
+  status.textContent = placed === idxs.length ? `all ${placed} on the map` : `${placed} of ${idxs.length} on the map — the rest open via their ↗`;
 }
 function showMap(i) {
   const m = geo.markers[i];
@@ -439,7 +461,7 @@ function showMap(i) {
     $('#geo-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } else {
     const p = currentPayload();
-    if (p?.o?.[i] !== undefined) window.open(mapsUrl(p.o[i]), '_blank', 'noopener');
+    if (p?.o?.[i] !== undefined) window.open(mapsUrl(optName(p.o[i])), '_blank', 'noopener');
   }
 }
 function setPinVisible(i, on) {
@@ -451,10 +473,28 @@ function resetGeo() {
   if (geo.map) { geo.map.remove(); geo.map = null; }
   geo.markers = {};
 }
+/* a hand-picked emoji rides inside the option string itself ("🍕 Shake Shack"),
+   so the payload schema and old links are untouched; bare digits never match ("5 Guys" is safe) */
+const LEAD_EMOJI_RE = /^(\p{Extended_Pictographic}(?:\uFE0F|[\u{1F3FB}-\u{1F3FF}])?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F|[\u{1F3FB}-\u{1F3FF}])?)*|[0-9#*]\uFE0F?\u20E3|[\u{1F1E6}-\u{1F1FF}]{2})\s*/u;
+function splitEmoji(s) {
+  const m = String(s ?? '').match(LEAD_EMOJI_RE);
+  return m ? { e: m[1], rest: s.slice(m[0].length) } : { e: null, rest: String(s ?? '') };
+}
+const optLabel = (opt) => splitEmoji(opt).rest;           // '' for an emoji-only option
+const optName = (opt) => splitEmoji(opt).rest || opt;     // what geocoders / Maps search for
 function emojiFor(text, i) {
+  const lead = splitEmoji(text).e;
+  if (lead) return lead;
   for (const [re, e] of EMOJI_RULES) if (re.test(text)) return e;
   return EMOJI_FALLBACK[i % EMOJI_FALLBACK.length];
 }
+const EMOJI_PALETTE = [
+  '🍣', '🍜', '🍕', '🌮', '🍔', '🍛', '🍝', '🥟',
+  '🥩', '🦪', '🥘', '🥙', '🍲', '🥗', '🥪', '🍗',
+  '🥞', '🥐', '🍩', '🍦', '🍿', '☕', '🍷', '🍺',
+  '🍸', '🧋', '🎬', '🎭', '🖼️', '🎶', '🎲', '🎳',
+  '🌳', '🏖️', '⛰️', '🚲', '🛋️', '✈️', '✨', '❤️',
+];
 
 /* ---------- tiny ui helpers ---------- */
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
@@ -552,15 +592,22 @@ function confetti() {
 let keepSet = new Set();   // cut view selection
 let finalPick = null;      // close view selection
 let composeCount = 5;      // visible option slots
+let optEmoji = {};         // compose: hand-picked emoji per option index
+let paletteFor = null;     // compose: which row's emoji palette is open
+
+const MAP_ICON = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>`;
 
 const OPT_PLACEHOLDERS = ['that sushi place', 'the thai spot', 'tacos obviously', 'somewhere new', 'the reliable one', 'wildcard', 'dealer’s choice'];
 
 function renderHome() {
   const name = store.get('name', '');
   const history = store.get('history', []);
+  paletteFor = null;
   const optRows = Array.from({ length: composeCount }, (_, i) => `
     <div class="opt-row">
       <div class="opt-num">${i + 1}</div>
+      <button class="emoji-btn${optEmoji[i] ? ' set' : ''}" data-action="emoji-pick" data-i="${i}"
+              aria-label="pick an emoji for option ${i + 1}">${optEmoji[i] || '＋'}</button>
       <input class="text-in opt-in" id="opt${i}" maxlength="64" autocomplete="off"
              placeholder="${esc(OPT_PLACEHOLDERS[i % OPT_PLACEHOLDERS.length])}">
     </div>`).join('');
@@ -630,10 +677,10 @@ function renderCut(p) {
         <div class="choice-row">
           <button class="choice" data-action="toggle-keep" data-i="${i}" style="animation-delay:${i * 55}ms">
             <span class="emoji">${emojiFor(opt, i)}</span>
-            <span class="label">${esc(opt)}</span>
+            <span class="label">${esc(optLabel(opt))}</span>
             <span class="badge">KEEP ✓</span>
           </button>
-          <button class="mapbtn" data-action="show-map" data-i="${i}" aria-label="show ${esc(opt)} on the map">📍</button>
+          <button class="mapbtn" data-action="show-map" data-i="${i}" aria-label="open ${esc(optName(opt))} in Maps">${MAP_ICON}</button>
         </div>`).join('')}
     </div>
     <div class="keep-counter" id="keep-counter">0 of 2 kept</div>
@@ -668,10 +715,10 @@ function renderClose(p) {
         <div class="choice-row">
           <button class="choice" data-action="pick-final" data-i="${i}" style="animation-delay:${j * 90}ms">
             <span class="emoji">${emojiFor(text, i)}</span>
-            <span class="label">${esc(text)}</span>
+            <span class="label">${esc(optLabel(text))}</span>
             <span class="badge">🏆</span>
           </button>
-          <button class="mapbtn" data-action="show-map" data-i="${i}" aria-label="show ${esc(text)} on the map">📍</button>
+          <button class="mapbtn" data-action="show-map" data-i="${i}" aria-label="open ${esc(optName(text))} in Maps">${MAP_ICON}</button>
         </div>`).join('')}
     </div>
     <div class="choices" id="ghost-rows">
@@ -679,7 +726,7 @@ function renderClose(p) {
         <div class="choice-row ghost-row">
           <div class="choice">
             <span class="emoji">${emojiFor(opt, i)}</span>
-            <span class="label">${esc(opt)}</span>
+            <span class="label">${esc(optLabel(opt))}</span>
           </div>
         </div>`).join('')}
     </div>
@@ -739,8 +786,10 @@ function composeShare() {
   const title = $('#title-in').value.trim();
   const opts = [];
   for (let i = 0; i < composeCount; i++) {
-    const v = $('#opt' + i)?.value.trim();
-    if (v) opts.push(v);
+    const v = $('#opt' + i)?.value.trim() ?? '';
+    const e = optEmoji[i];
+    if (v && e) opts.push(e + ' ' + v);
+    else if (v || e) opts.push(v || e); // a lone emoji is a legitimate option
   }
   if (opts.length < 3) { err.textContent = 'Give them at least 3 options (5 is the ritual).'; err.classList.add('show'); return; }
   const lower = opts.map((o) => o.toLowerCase());
@@ -833,7 +882,14 @@ app.addEventListener('click', (e) => {
   else if (act === 'pick-final') pickFinal(el);
   else if (act === 'undo-final') { finalPick = null; route(); }
   else if (act === 'close-share') closeShare();
-  else if (act === 'done-restart') { location.hash = ''; composeCount = 5; route(); }
+  else if (act === 'done-restart') { location.hash = ''; composeCount = 5; optEmoji = {}; route(); }
+  else if (act === 'emoji-pick') { const i = Number(el.dataset.i); paletteFor === i ? closePalette() : openPalette(i); }
+  else if (act === 'emoji-set') {
+    const i = Number(el.dataset.i);
+    if (el.dataset.e) optEmoji[i] = el.dataset.e; else delete optEmoji[i];
+    closePalette();
+    updateEmojiBtn(i);
+  }
   else if (act === 'show-map') showMap(Number(el.dataset.i));
   else if (act === 'share-alt') { if (navigator.share && lastMsg) navigator.share({ text: lastMsg }).catch(() => {}); }
   else if (act === 'copy-url') {
@@ -855,7 +911,35 @@ function restoreComposeValues(v) {
   if ($('#title-in')) $('#title-in').value = v.title ?? '';
   if ($('#name-in')) $('#name-in').value = v.name ?? '';
   v.opts.forEach((val, i) => { if ($('#opt' + i)) $('#opt' + i).value = val; });
+  for (let i = 0; i < composeCount; i++) updateEmojiBtn(i);
 }
+
+/* ---------- compose emoji picker ---------- */
+function emojiBtnFor(i) { return $('#opt' + i)?.closest('.opt-row')?.querySelector('.emoji-btn'); }
+function updateEmojiBtn(i) {
+  const btn = emojiBtnFor(i);
+  if (!btn) return;
+  const v = $('#opt' + i).value.trim();
+  const ex = optEmoji[i];
+  btn.classList.toggle('set', !!ex);
+  btn.classList.toggle('auto', !ex && !!v);
+  btn.textContent = ex || (v ? emojiFor(v, i) : '＋'); // no pick yet → live-preview the auto-guess
+}
+function closePalette() { $('#emoji-palette')?.remove(); paletteFor = null; }
+function openPalette(i) {
+  closePalette();
+  paletteFor = i;
+  const pal = document.createElement('div');
+  pal.className = 'emoji-palette';
+  pal.id = 'emoji-palette';
+  pal.innerHTML = `<button class="pal-cell pal-auto" data-action="emoji-set" data-i="${i}">auto</button>`
+    + EMOJI_PALETTE.map((e) => `<button class="pal-cell" data-action="emoji-set" data-i="${i}" data-e="${e}">${e}</button>`).join('');
+  emojiBtnFor(i).closest('.opt-row').after(pal);
+}
+/* the emoji button live-previews what the cut view will auto-guess */
+app.addEventListener('input', (e) => {
+  if (e.target.classList?.contains('opt-in')) updateEmojiBtn(Number(e.target.id.slice(3)));
+});
 /* enter → next option field */
 app.addEventListener('keydown', (e) => {
   if (e.key !== 'Enter' || !e.target.classList?.contains('opt-in')) return;
@@ -887,6 +971,7 @@ app.addEventListener('paste', (e) => {
     restoreComposeValues(vals);
   }
   lines.slice(0, 6 - start).forEach((l, j) => { const el = $('#opt' + (start + j)); if (el) el.value = l.slice(0, 64); });
+  for (let i = 0; i < composeCount; i++) updateEmojiBtn(i);
   toast('Filled from your list ✂️');
 });
 
