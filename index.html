@@ -880,10 +880,7 @@ function composeShare() {
   const url = linkFor(payload);
   $('#compose-linkrow').innerHTML = linkRowHTML(url);
   logRound({ title, stage: 'sent', url });
-  /* the message must beat plain-text "1. sushi 2. beers" at its own game:
-     menu readable in-thread, link only needed to play */
-  const menu = opts.map((o, i) => `${i + 1} ${emojiFor(o, i)} ${optLabel(o)}`.trimEnd()).join('\n');
-  finishShare(`${title ? title + ' — ' : ''}keep 2:\n${menu}\n${url}`, '#cta', 'Copied ✓ — now paste it to them');
+  finishShare(url, '#cta', 'Copied ✓ — now paste it to them');
 }
 
 function toggleKeep(btn) {
@@ -914,8 +911,7 @@ function cutShare() {
   const url = linkFor(payload);
   $('#cut-linkrow').innerHTML = linkRowHTML(url);
   logRound({ title: p.t, stage: 'cut', url });
-  const keeps = kept.map((i) => `${emojiFor(p.o[i], i)} ${optLabel(p.o[i])}`.trimEnd()).join('  vs  ');
-  finishShare(`kept 2: ${keeps} — your call\n${url}`, '#cta', 'Copied ✓ — paste it back');
+  finishShare(url, '#cta', 'Copied ✓ — paste it back');
 }
 
 function pickFinal(btn) {
