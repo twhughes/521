@@ -63,7 +63,7 @@
   #app {
     max-width: 440px;
     margin: 0 auto;
-    padding: max(10px, env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom));
+    padding: max(8px, env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom));
   }
 
   /* ---------- brand / hero ---------- */
@@ -214,6 +214,8 @@
   .cta:active { transform: scale(0.975); }
   .cta:disabled { opacity: 0.35; box-shadow: none; cursor: default; }
   .cta.secondary { background: var(--card2); color: var(--ink); box-shadow: none; }
+  .cta.msg { margin-top: 8px; background: linear-gradient(135deg, #34C759, #30B0C7); box-shadow: 0 6px 16px rgba(52, 199, 89, 0.28); }
+  .cta.msg[hidden] { display: none; }
   .linkrow {
     display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 8px;
     background: var(--card2); border: none; border-radius: 10px; padding: 8px 10px;
@@ -245,6 +247,7 @@
   .ghost-row .choice { cursor: default; }
 
   /* ---------- history ---------- */
+  .hist-list { max-height: 216px; overflow-y: auto; -webkit-overflow-scrolling: touch; margin: 0 -2px; }
   .hist-row {
     display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
     background: none; border: none; font: inherit; color: var(--ink); cursor: pointer;
@@ -267,7 +270,7 @@
 
   /* ---------- footer / misc ---------- */
   .house-rule {
-    margin-top: 12px; text-align: center; font-size: 11.5px; color: var(--ink2);
+    margin-top: 10px; text-align: center; font-size: 11.5px; color: var(--ink2);
     font-weight: 550; line-height: 1.45; padding: 0 12px;
   }
   .house-rule b { color: var(--accent); font-weight: 750; }
@@ -338,59 +341,84 @@ const linkFor = (payload) =>
 
 /* ---------- emoji matcher ---------- */
 const EMOJI_RULES = [
-  /* first match wins — specific before generic */
-  // food: dishes & cuisines
-  [/sushi|omakase|sashimi|izakaya|japanese|hibachi/i, '🍣'],
-  [/ramen|noodle|pho\b|udon|soba/i, '🍜'],
-  [/pizza|slice/i, '🍕'],
-  [/taco|taqueria|mexican|tex.?mex|burrito|quesadilla|nacho|cantina|pastor/i, '🌮'],
-  [/burger|smash|shake shack/i, '🍔'],
-  [/thai|curry|indian|masala|tikka/i, '🍛'],
-  [/pasta|italian|trattoria|osteria|lasagna|risotto|gnocchi/i, '🍝'],
-  [/dumpling|dim ?sum|chinese|szechuan|sichuan|bao\b|empanada|pierogi/i, '🥟'],
-  [/korean|kbbq|bulgogi|bibimbap/i, '🍖'],
-  [/bbq|barbecue|smokehouse|steak|grill|churrasco|brisket/i, '🥩'],
-  [/ceviche/i, '🐟'],
-  [/fishing/i, '🎣'],
-  [/oyster|seafood|fish|crab|lobster|clam|shrimp|scallop/i, '🦪'],
-  [/poke|hawaiian/i, '🥢'],
-  [/tapas|spanish|paella/i, '🥘'],
-  [/french|bistro|brasserie/i, '🥖'],
-  [/mediterranean|greek|gyro|falafel|shawarma|halal|kebab|hummus/i, '🥙'],
-  [/vietnamese|banh/i, '🥢'],
-  [/german|schnitzel|biergarten|pretzel|oktoberfest/i, '🥨'],
-  [/hot ?dog|bratwurst/i, '🌭'],
-  [/cheese|fondue|charcuterie|raclette/i, '🧀'],
-  // drinks
-  [/wine|vino|cocktail|speakeasy|\bbar\b/i, '🍷'],
-  [/margarita|tequila|mezcal|tiki/i, '🍹'],
-  [/whiskey|whisky|bourbon|scotch|distillery/i, '🥃'],
-  [/sake\b/i, '🍶'],
-  [/beer|brewery|\bpub\b|taproom/i, '🍺'],
-  [/boba|bubble tea/i, '🧋'],
-  [/matcha|tea ?house|chai\b/i, '🍵'],
-  [/coffee|cafe|café|espresso|latte/i, '☕'],
-  [/smoothie|juice/i, '🧃'],
-  [/milkshake/i, '🥤'],
-  // sweets
-  [/dessert|ice ?cream|gelato|sundae|froyo/i, '🍦'],
-  [/bakery|croissant|pastry|patisserie|crepe|crêpe/i, '🥐'],
-  [/donut|doughnut/i, '🍩'],
-  [/cake|birthday/i, '🍰'],
-  [/\bpie\b/i, '🥧'],
-  [/cookie/i, '🍪'],
-  [/chocolate|truffle/i, '🍫'],
-  [/candy|sweets/i, '🍬'],
-  // meals & modes
-  [/brunch|breakfast|pancake|waffle|diner|egg/i, '🥞'],
-  [/bagel|deli|sandwich|hoagie|sub\b/i, '🥪'],
-  [/salad|vegan|veggie|vegetarian|bowl\b/i, '🥗'],
-  [/chicken|wing/i, '🍗'],
-  [/soup|stew|hot ?pot/i, '🍲'],
-  [/fries|fish ?(and|&|n) ?chips/i, '🍟'],
-  [/takeout|take.?out|delivery|order in/i, '🥡'],
-  [/cook|homemade|home ?cooked|eat (at )?home/i, '🍳'],
-  [/farmers.? market/i, '🥕'],
+  /* first match wins — specific before generic. Cast a WIDE net, esp. on food:
+     partial words are fine ("chick" → chicken), chains count as their food,
+     and both spellings of everything ("burger"/"hamburger", "whisky"/"whiskey"). */
+
+  // —— cuisines & signature dishes ——
+  [/sushi|omakase|sashimi|nigiri|maki\b|izakaya|japanese|hibachi|teppan|tempura|donburi|katsu|onigiri|teriyaki|wagyu|unagi|edamame/i, '🍣'],
+  [/ramen|noodle|\bpho\b|udon|soba|lo ?mein|chow ?mein|rice ?noodle|vermicelli|pad ?see/i, '🍜'],
+  [/pizza|pizzeria|\bslice|margherita|pepperoni|calzone|neapolitan|deep ?dish|flatbread|focaccia|za\b/i, '🍕'],
+  [/taco|taqueria|mexican|tex.?mex|burrito|quesadilla|nacho|cantina|pastor|carnitas|carne asada|enchilada|fajita|tostada|elote|chipotle|guac|mole\b|birria|barbacoa|al pastor/i, '🌮'],
+  [/burger|hamburger|cheeseburger|smash.?burger|patty|in.?n.?out|five ?guys|whopper|shake ?shack|whataburger|big mac|slider|wendy|mcdonald|burger king/i, '🍔'],
+  [/thai|pad ?thai|curry|indian|masala|tikka|biryani|\bnaan|samosa|vindaloo|korma|paneer|dosa|chana|saag|butter chicken|tandoori/i, '🍛'],
+  [/pasta|italian|trattoria|osteria|lasagna|risotto|gnocchi|spaghetti|ravioli|fettuccine|carbonara|penne|linguine|alfredo|marinara|cacio|olive garden/i, '🍝'],
+  [/dumpling|dim ?sum|chinese|szechuan|sichuan|cantonese|\bbao\b|baozi|empanada|pierogi|potsticker|wonton|gyoza|xiao ?long|soup ?dumpling|panda express|\bpanda\b/i, '🥟'],
+  [/korean|kbbq|bulgogi|bibimbap|galbi|kimchi|tteok|japchae|gochujang/i, '🍖'],
+  [/grilled ?cheese/i, '🧀'],
+  [/bbq|barbecue|barbeque|smokehouse|steak|grill|churrasco|brisket|\bribs?\b|pulled ?pork|rib ?tips|pit ?master|prime rib|filet|sirloin|ribeye|porterhouse/i, '🥩'],
+  [/ceviche|peruvian|nikkei|lomo saltado/i, '🐟'],
+  [/oyster|seafood|fish ?market|\bcrab|lobster|\bclam|shrimp|prawn|scallop|mussel|calamari|raw ?bar|shellfish/i, '🦪'],
+  [/poke|hawaiian|luau/i, '🥢'],
+  [/tapas|spanish|paella|jamón|jamon/i, '🥘'],
+  [/french|bistro|brasserie|crêperie|creperie|coq au vin|escargot|ratatouille|croque/i, '🥖'],
+  [/mediterranean|greek|gyro|falafel|shawarma|shwarma|halal|\bkebab|kabob|hummus|souvlaki|tzatziki|\bpita\b|chickpea|lebanese|turkish|persian|dolma|baba/i, '🥙'],
+  [/vietnamese|banh|spring ?roll|bún\b|\bbun\b/i, '🥢'],
+  [/german|schnitzel|biergarten|pretzel|oktoberfest|wurst|spätzle|spaetzle/i, '🥨'],
+  [/hot ?dog|corn ?dog|frankfurter|\bconey|bratwurst|weiner|wiener/i, '🌭'],
+  [/ethiopian|injera|moroccan|tagine|jollof|peri ?peri|nando|african/i, '🍲'],
+  [/caribbean|\bjerk\b|jamaican|cuban|puerto ?rican|mofongo|plantain|trini/i, '🍛'],
+  [/filipino|adobo|lumpia|sinigang|\bpancit/i, '🍚'],
+
+  // —— proteins, staples, comfort food ——
+  [/\bchick|nugget|wings?\b|rotisserie|fried ?chicken|drumstick|popeyes|\bkfc\b|tenders?\b|chicken ?parm|chik|nando|zaxby|raising cane|cane['’]s|buffalo/i, '🍗'],
+  [/cheese(?!cake)|fondue|charcuterie|raclette|mac ?(and|n|&|'n) ?cheese|queso|brie|mozzarella|burrata/i, '🧀'],
+  [/bacon|\bpork\b|carnita|\bribs?\b/i, '🥓'],
+  [/\bfried ?rice|\brice\b|jasmine|congee|jollof|risotto|paella|arroz/i, '🍚'],
+  [/\begg|omelet|frittata|benedict|quiche|scramble/i, '🍳'],
+  [/soup|stew|\bhot ?pot|shabu|chowder|bisque|pozole|menudo|broth|gumbo|jambalaya/i, '🍲'],
+  [/fries|french ?fr|fish ?(and|&|'?n) ?chips|poutine|tater/i, '🍟'],
+  [/bagel|\bdeli\b|sandwich|hoagie|\bsub\b|\bsubway\b|panini|melt\b|\bwrap\b|\bblt\b|club\b|reuben|po'?boy|banh ?mi|torta/i, '🥪'],
+  [/salad|\bvegan|veggie|vegetarian|\bbowl\b|\bkale|sweetgreen|cava\b|chopt|farm.?to.?table|plant.?based/i, '🥗'],
+  [/corn\b|elote|popcorn ?chicken/i, '🌽'],
+  [/avocado|\bguac|toast\b/i, '🥑'],
+  [/farmers.? ?market|produce|greengrocer/i, '🥕'],
+
+  // —— sweets & bakery ——
+  [/dessert|ice ?cream|gelato|sundae|froyo|frozen ?yogurt|soft ?serve|\bcone\b|sorbet|scoop/i, '🍦'],
+  [/bakery|croissant|pastry|patisserie|crêpe|crepe|danish|strudel|scone/i, '🥐'],
+  [/donut|doughnut|krispy|dunkin/i, '🍩'],
+  [/waffle/i, '🧇'],
+  [/pancake|\bihop\b|flapjack|hotcake/i, '🥞'],
+  [/\bcake|birthday|cheesecake|cupcake|tiramisu/i, '🍰'],
+  [/\bpie\b|cobbler|tart\b/i, '🥧'],
+  [/cookie|biscotti|macaron|shortbread/i, '🍪'],
+  [/chocolate|truffle|brownie|fudge|\bcocoa|ganache/i, '🍫'],
+  [/candy|sweets|gummies?|licorice|caramel|toffee/i, '🍬'],
+  [/churro|funnel ?cake|beignet|zeppole/i, '🍩'],
+  [/honey|baklava/i, '🍯'],
+
+  // —— breakfast & brunch ——
+  [/brunch|breakfast|\bdiner\b|hash ?brown|\bgrits\b/i, '🍳'],
+
+  // —— drinks ——
+  [/wine|vino|vineyard|sommelier|rosé|\brose wine|merlot|cabernet|pinot|chardonnay|prosecco|champagne|bubbly/i, '🍷'],
+  [/cocktail|speakeasy|mixology|martini|negroni|old ?fashioned|manhattan|mojito|daiquiri|spritz/i, '🍸'],
+  [/margarita|tequila|mezcal|tiki|mai ?tai|piña|pina colada/i, '🍹'],
+  [/whiskey|whisky|bourbon|scotch|distillery|rye\b|\brum\b|\bgin\b|vodka|brandy|cognac/i, '🥃'],
+  [/\bsake\b|soju/i, '🍶'],
+  [/beer|brewery|\bpub\b|taproom|\bipa\b|\blager|pilsner|\bale\b|cider|stout|draft|draught/i, '🍺'],
+  [/boba|bubble ?tea|milk ?tea/i, '🧋'],
+  [/matcha|tea ?house|\bchai\b|\bteahouse|high tea|afternoon tea/i, '🍵'],
+  [/coffee|\bcafe|café|espresso|latte|cappuccino|cortado|macchiato|americano|starbucks|mocha|cold ?brew|flat ?white/i, '☕'],
+  [/smoothie|\bjuice|açaí|acai|kombucha/i, '🧃'],
+  [/milkshake|\bshake\b|malt\b|\bsoda\b|\bcola\b|slushie|slurpee/i, '🥤'],
+  [/\bbar\b|lounge|nightcap/i, '🍸'],
+
+  // —— generic food catch-all (after everything specific) ——
+  [/restaurant|\bdinner\b|\blunch\b|\bfood\b|\beat\b|eatery|hungry|\bmeal\b|\bdine|dining|\bsnack|\bbite\b|\bgrub\b|feast|buffet|food ?truck|food ?court|cafeteria|potluck|tapas/i, '🍽️'],
+  [/takeout|take.?out|delivery|order ?in|doordash|uber ?eats|grubhub|seamless|postmates/i, '🥡'],
+  [/cook|homemade|home ?cooked|eat (at )?home|meal ?prep|leftover|air ?fry|instant ?pot|recipe/i, '🍳'],
   // games
   [/cribbage|poker|blackjack|solitaire|rummy|euchre|uno\b|cards?\b/i, '🃏'],
   [/chess|checkers|scrabble|catan|monopoly|board ?game|puzzle/i, '♟️'],
@@ -424,10 +452,13 @@ const EMOJI_RULES = [
   [/skat(e|ing)/i, '⛸️'],
   [/surf/i, '🏄'],
   [/kayak|canoe|paddle/i, '🛶'],
-  [/sail|boat|ferry/i, '⛵'],
-  [/camp(ing|site|fire)?\b/i, '🏕️'],
-  [/beach/i, '🏖️'],
-  [/park\b|walk|hike|trail|picnic/i, '🌳'],
+  [/fishing|\bfish (trip|charter)/i, '🎣'],
+  [/sail|\bboat|ferry|cruise|yacht/i, '⛵'],
+  [/camp(ing|site|fire)?\b|\bbonfire|s'?more/i, '🏕️'],
+  [/beach|seaside|shore\b|boardwalk/i, '🏖️'],
+  [/park\b|walk|hike|trail|picnic|nature|forest|botanical/i, '🌳'],
+  [/farmers.? ?market/i, '🥕'],
+  [/apple pick|orchard|pumpkin patch|berry pick/i, '🍎'],
   // outings
   [/movie|film|cinema/i, '🍿'],
   [/theater|theatre|broadway|comedy|stand.?up|improv|show\b/i, '🎭'],
@@ -605,6 +636,8 @@ async function finishShare(msg, ctaSel, doneLabel) {
   lastMsg = msg;
   const alt = document.querySelector('[data-action="share-alt"]');
   if (alt && navigator.share) alt.hidden = false;
+  const msgBtn = document.querySelector('[data-action="send-msg"]');
+  if (msgBtn) msgBtn.hidden = false;   // Messages opens with the text prefilled — no paste
   let ok = true;
   try { await navigator.clipboard.writeText(msg); } catch { ok = false; }
   const cta = document.querySelector(ctaSel);
@@ -721,11 +754,12 @@ function renderHome() {
       </div>
       <div class="form-error" id="form-error"></div>
       <button class="cta" data-action="compose-share" id="cta">Copy the link — they keep 2</button>
-      <button class="share-alt" data-action="share-alt" hidden>📤 or send with the share sheet</button>
+      <button class="cta msg" data-action="send-msg" hidden>💬 Send in Messages</button>
+      <button class="share-alt" data-action="share-alt" hidden>📤 or use the share sheet</button>
       <div id="compose-linkrow"></div>
     </div>
 
-    ${history.length ? `<div class="card"><h2>Recent rounds</h2>${history.map((h, i) => `
+    ${history.length ? `<div class="card"><h2>Recent rounds</h2><div class="hist-list">${history.map((h, i) => `
       <button class="hist-row" data-action="open-history" data-i="${i}">
         <span class="hist-emoji">${h.winner ? '🏆' : emojiFor(h.title || '', i)}</span>
         <span class="hist-main">
@@ -733,7 +767,7 @@ function renderHome() {
           <span class="hist-state">${h.winner ? esc(h.winner) : ({ sent: 'sent — waiting on their 2', cut: 'you kept 2 — their call', closed: 'decided', done: 'decided' }[h.stage] || '')}</span>
         </span>
         <span class="hist-date">${fmtDay(h.ts)}</span>
-      </button>`).join('')}</div>` : ''}
+      </button>`).join('')}</div></div>` : ''}
 
     ${houseRule}
   `;
@@ -768,7 +802,8 @@ function renderCut(p) {
       <div class="field-label">Your name — optional</div>
       <input class="text-in" id="cutter-name" maxlength="24" placeholder="you" value="${esc(forSelf ? '' : myName)}">
       <button class="cta" data-action="cut-share" id="cta" disabled>Copy the link back</button>
-      <button class="share-alt" data-action="share-alt" hidden>📤 or send with the share sheet</button>
+      <button class="cta msg" data-action="send-msg" hidden>💬 Send in Messages</button>
+      <button class="share-alt" data-action="share-alt" hidden>📤 or use the share sheet</button>
       <div id="cut-linkrow"></div>
     </div>
     <details class="explain"><summary>First time? How 5·2·1 works</summary>
@@ -934,6 +969,7 @@ function pickFinal(btn) {
       <p class="lede">🏆 ${esc(p.o[finalPick])}</p>
       <p class="sub">Now the sacred final step: tell ${esc(p.c || 'them')}.</p>
       <button class="cta" data-action="close-share" id="close-cta">Copy the verdict${p.c ? ' for ' + esc(p.c) : ''}</button>
+      <button class="cta msg" data-action="send-msg" hidden>💬 Send in Messages</button>
       <button class="cta secondary" data-action="undo-final">wait, let me rethink</button>
       <button class="share-alt" data-action="share-alt" hidden>📤 or send with the share sheet</button>
       <div id="close-linkrow"></div>
@@ -971,6 +1007,7 @@ app.addEventListener('click', (e) => {
     updateEmojiBtn(i);
   }
   else if (act === 'show-map') showMap(Number(el.dataset.i));
+  else if (act === 'send-msg') { if (lastMsg) location.href = 'sms:&body=' + encodeURIComponent(lastMsg); }
   else if (act === 'share-alt') { if (navigator.share && lastMsg) navigator.share({ text: lastMsg }).catch(() => {}); }
   else if (act === 'copy-url') {
     navigator.clipboard?.writeText(el.dataset.url).then(() => toast('Link copied ✓'), () => toast('Long-press the link to copy'));
