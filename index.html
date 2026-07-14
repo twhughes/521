@@ -77,6 +77,7 @@
 
   /* ---------- stepper ---------- */
   .stepper { display: flex; align-items: center; justify-content: center; gap: 0; padding: 8px 0 2px; }
+  .step-cap { display: block; text-align: center; margin-top: 3px; font-size: 11px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent); }
   .step {
     width: 27px; height: 27px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
@@ -139,10 +140,19 @@
   .emoji-btn.auto { opacity: 0.45; }
   .emoji-btn.set { background: var(--accent-soft); }
   .emoji-palette {
-    display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px;
     background: var(--card2); border-radius: 12px; padding: 6px;
     margin: 6px 0 4px 28px;
     animation: rise 0.25s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+  .pal-search {
+    width: 100%; box-sizing: border-box; border: none; border-radius: 8px;
+    padding: 6px 9px; margin-bottom: 6px; font: inherit; font-size: 13px;
+    background: var(--card); color: var(--ink);
+  }
+  .pal-search:focus { outline: 2px solid var(--accent-soft); }
+  .pal-grid {
+    display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px;
+    max-height: 176px; overflow-y: auto;
   }
   .pal-cell {
     background: none; border: none; font: inherit; font-size: 18px;
@@ -150,6 +160,7 @@
   }
   .pal-cell:active { background: var(--accent-soft); transform: scale(0.9); }
   .pal-auto { font-size: 9.5px; font-weight: 700; color: var(--ink2); text-transform: uppercase; letter-spacing: 0.04em; }
+  .pal-empty { grid-column: 1 / -1; text-align: center; font-size: 12px; color: var(--ink2); padding: 12px 4px; }
   .add-opt {
     margin-top: 8px; background: none; border: none; font: inherit; cursor: pointer;
     font-size: 11.5px; font-weight: 600; color: var(--ink2); opacity: 0.65; padding: 2px 0;
@@ -174,6 +185,15 @@
     cursor: pointer; font: inherit; color: var(--ink2);
   }
   .dimmed-row { opacity: 0.35; }
+  .strikebtn {
+    flex: none; width: 32px; display: flex; align-items: center; justify-content: center;
+    background: var(--card); border: none; border-radius: 12px; box-shadow: var(--shadow);
+    cursor: pointer; font: inherit; font-size: 14px; font-weight: 700; color: var(--ink2);
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .choice-row.struck .choice { opacity: 0.42; }
+  .choice-row.struck .choice .label { text-decoration: line-through; text-decoration-thickness: 2px; }
+  .choice-row.struck .strikebtn { background: var(--accent-soft); color: var(--accent); }
   .choice {
     display: flex; align-items: center; gap: 10px; text-align: left;
     background: var(--card); border: 2px solid transparent; border-radius: 14px;
@@ -485,6 +505,63 @@ const EMOJI_RULES = [
   [/date ?night/i, '✨'],
 ];
 const EMOJI_FALLBACK = ['🍽️', '✨', '🎲', '🌟', '💫', '🧭', '🎁'];
+/* ---------- named places (a local's hand-picks; first match wins, before the generic rules) ----------
+   These beat the cuisine guesser because a name alone ("Motorino") doesn't say "pizza".
+   Tyler curates this by neighborhood — it's meant to grow. Add a line: [/name/i, '🙂']. */
+const NAMED_PLACES = [
+  // ============ Upper West Side (a local's map — first match wins; add your block) ============
+  // —— pizza (put slice shops before the generic pizza rule) ——
+  [/motorino/i, '🍕'],                          // Neapolitan
+  [/sal (and|&|'?n) ?carmine/i, '🍕'],          // 1959 slice institution (before Carmine's below)
+  [/mama'?s too|koronet|bettolona|numero ?28|v ?& ?t pizzeria/i, '🍕'],
+  // —— Italian ——
+  [/carmine'?s/i, '🍝'],                        // family-style
+  [/gennaro|pappardella|cafe ?fiorello|fiorello|serafina|\bceleste\b|\bfumo\b|osteria ?cotta|machiavelli/i, '🍝'],
+  // —— sushi / Japanese ——
+  [/sushi ?yasaka|sushi ?nonaka|momoya|kouzan|\bkaito\b|sushi ?of ?gari|masa\b/i, '🍣'],
+  // —— ramen / noodles ——
+  [/jin ?ramen|kitakata|ramen ?ban ?nai/i, '🍜'],
+  // —— Chinese / dim sum ——
+  [/red ?farm|han ?dynasty|ollie'?s|jing ?fong/i, '🥟'],
+  // —— Mexican ——
+  [/covacha|rosa ?mexicano|cascabel|noche ?mexicana/i, '🌮'],
+  // —— Thai ——
+  [/\bsala\b|land ?thai/i, '🍛'],
+  // —— Greek / Mediterranean / Middle Eastern ——
+  [/\bkefi\b|\bdagon\b|\bmiriam\b|\btessa\b|bustan|boulud ?sud/i, '🥙'],
+  [/ayat|hinds ?hall/i, '🥙'],                  // Palestinian
+  // —— Afro-Caribbean ——
+  [/tatiana/i, '🍛'],
+  // —— French / bistro / fine dining ——
+  [/jean.?georges/i, '🥂'],
+  [/cafe ?luxembourg|bar ?boulud|nice ?matin/i, '🍷'],
+  // —— seafood ——
+  [/mermaid ?inn|el ?fish|marisqueria|citarella/i, '🦪'],
+  // —— burgers / American / diner ——
+  [/old ?john'?s|5 ?napkin|five ?napkin/i, '🍔'],
+  [/the ?ribbon/i, '🍗'],                       // fried chicken
+  [/good ?enough ?to ?eat/i, '🥞'],             // brunch pancakes
+  [/the ?smith|community food/i, '🍳'],
+  // —— rotisserie / Latin ——
+  [/flor de mayo|malecon|la ?caridad/i, '🍗'],
+  // —— deli / appetizing / bagels ——
+  [/barney ?greengrass/i, '🥯'],               // the Sturgeon King
+  [/absolute ?bagel|zabar'?s|p\.?j\.? ?bernstein/i, '🥯'],
+  // —— Southern / pickles ——
+  [/jacob'?s pickle|maison ?pickle/i, '🥒'],
+  // —— hot dogs ——
+  [/gray'?s papaya/i, '🌭'],
+  // —— vegan / healthy ——
+  [/peacefood|\bblossom\b/i, '🥗'],
+  // —— tapas ——
+  [/boqueria|salumeria ?rosi/i, '🥘'],
+  // —— bakeries / cookies / dessert ——
+  [/levain|insomnia ?cookie/i, '🍪'],
+  [/magnolia ?bakery|buttercup/i, '🧁'],
+  [/cafe ?lalo/i, '🍰'],
+  [/orwashers|silver ?moon|grandaisy|bouchon/i, '🥐'],
+  [/brunch|sarabeth'?s/i, '🍳'],
+];
 /* plain Google Maps search deep link — no API, no key; iOS opens the Maps app */
 const mapsUrl = (name) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(name);
 /* ---------- rendered map with numbered pins (Leaflet + OSM tiles) ----------
@@ -597,6 +674,7 @@ const optName = (opt) => splitEmoji(opt).rest || opt;     // what geocoders / Ma
 function emojiFor(text, i) {
   const lead = splitEmoji(text).e;
   if (lead) return lead;
+  for (const [re, e] of NAMED_PLACES) if (re.test(text)) return e;
   for (const [re, e] of EMOJI_RULES) if (re.test(text)) return e;
   return EMOJI_FALLBACK[i % EMOJI_FALLBACK.length];
 }
@@ -607,6 +685,71 @@ const EMOJI_PALETTE = [
   '🍸', '🧋', '🎬', '🎭', '🖼️', '🎶', '🎲', '🎳',
   '🌳', '🏖️', '⛰️', '🚲', '🛋️', '✈️', '✨', '❤️',
   '🃏', '🎮', '🎤', '🏓', '🐟', '⛳', '💆',
+];
+/* full searchable set — [emoji, space-separated keywords]. Search prefix-matches a
+   keyword token, so "tea" finds 🍵 but not "steak". Empty query shows EMOJI_PALETTE. */
+const EMOJI_ALL = [
+  ['🍕', 'pizza slice pie'], ['🍔', 'burger hamburger cheeseburger'], ['🌭', 'hotdog hot dog sausage'],
+  ['🥪', 'sandwich sub deli melt club'], ['🌮', 'taco mexican'], ['🌯', 'burrito wrap'],
+  ['🥙', 'gyro falafel shawarma pita kebab mediterranean'], ['🧆', 'falafel'], ['🥗', 'salad healthy vegan veggie greens bowl'],
+  ['🍝', 'pasta spaghetti italian'], ['🍜', 'ramen noodle pho udon soup'], ['🍲', 'soup stew hotpot pot chowder'],
+  ['🍛', 'curry rice thai indian'], ['🍣', 'sushi sashimi nigiri japanese omakase'], ['🍱', 'bento box japanese'],
+  ['🍚', 'rice'], ['🍙', 'onigiri riceball'], ['🥟', 'dumpling dimsum gyoza potsticker bao'],
+  ['🥠', 'fortune cookie'], ['🥡', 'takeout takeaway leftovers'], ['🍗', 'chicken drumstick wing fried poultry'],
+  ['🍖', 'meat bbq ribs korean bone'], ['🥩', 'steak beef bbq'], ['🥓', 'bacon pork'],
+  ['🍳', 'egg breakfast brunch fried'], ['🥚', 'egg'], ['🧇', 'waffle'], ['🥞', 'pancake pancakes brunch'],
+  ['🥐', 'croissant bakery pastry'], ['🥖', 'baguette bread french bakery'], ['🥨', 'pretzel german'],
+  ['🥯', 'bagel deli lox'], ['🍞', 'bread toast'], ['🧀', 'cheese fondue mac'], ['🍟', 'fries frenchfries'],
+  ['🥘', 'paella tapas spanish pan'], ['🫓', 'flatbread naan pita'], ['🍿', 'popcorn movie cinema'],
+  ['🥫', 'canned soup'], ['🫕', 'fondue hotpot'], ['🍤', 'shrimp tempura prawn fried'], ['🦞', 'lobster'],
+  ['🦐', 'shrimp prawn'], ['🦪', 'oyster seafood rawbar'], ['🦀', 'crab'], ['🐟', 'fish seafood'],
+  ['🍥', 'fishcake'], ['🍦', 'icecream softserve dessert cone'], ['🍨', 'icecream sundae dessert'],
+  ['🍧', 'shaved ice'], ['🎂', 'cake birthday'], ['🍰', 'cake dessert cheesecake slice'], ['🧁', 'cupcake muffin'],
+  ['🥧', 'pie'], ['🍮', 'custard flan pudding'], ['🍩', 'donut doughnut'], ['🍪', 'cookie'],
+  ['🍫', 'chocolate'], ['🍬', 'candy sweets'], ['🍭', 'lollipop candy'], ['🍯', 'honey'],
+  ['☕', 'coffee espresso latte cafe cappuccino'], ['🍵', 'tea matcha green chai'], ['🧋', 'boba bubbletea milktea'],
+  ['🥤', 'soda shake milkshake slushie soft drink'], ['🧃', 'juice smoothie'], ['🥛', 'milk'],
+  ['🍺', 'beer brewery pub ale ipa'], ['🍻', 'beers cheers pub'], ['🍷', 'wine red vino'],
+  ['🥂', 'champagne prosecco toast celebrate cheers'], ['🍸', 'cocktail martini bar'], ['🍹', 'tropical margarita tiki cocktail'],
+  ['🍶', 'sake soju'], ['🥃', 'whiskey whisky bourbon scotch rum'], ['🍾', 'champagne bottle celebrate'],
+  ['🍎', 'apple orchard picking'], ['🍊', 'orange citrus'], ['🍋', 'lemon citrus'], ['🍌', 'banana'],
+  ['🍉', 'watermelon'], ['🍇', 'grapes wine'], ['🍓', 'strawberry berry'], ['🫐', 'blueberry berry'],
+  ['🍒', 'cherry'], ['🍑', 'peach'], ['🥭', 'mango'], ['🍍', 'pineapple'], ['🥥', 'coconut'],
+  ['🥝', 'kiwi'], ['🍅', 'tomato'], ['🥑', 'avocado toast'], ['🍆', 'eggplant'], ['🥦', 'broccoli veggie'],
+  ['🥬', 'lettuce greens salad'], ['🥒', 'cucumber pickle'], ['🌶️', 'pepper spicy hot chili'], ['🌽', 'corn'],
+  ['🥕', 'carrot farmersmarket veggie'], ['🍄', 'mushroom'], ['🥔', 'potato'],
+  ['🎬', 'movie film cinema'], ['🎭', 'theater theatre broadway play show comedy improv'], ['🎟️', 'tickets show event'],
+  ['🎤', 'karaoke concert sing mic'], ['🎶', 'music concert'], ['🎧', 'music headphones podcast'],
+  ['🎸', 'guitar rock music band'], ['🎹', 'piano music'], ['🎻', 'violin symphony orchestra classical'],
+  ['🥁', 'drums music'], ['🎨', 'art paint pottery craft ceramics'], ['🖼️', 'museum gallery art exhibit'],
+  ['🎪', 'circus fair carnival'], ['🎡', 'ferriswheel fair amusement'], ['🎢', 'rollercoaster amusement park'],
+  ['🕹️', 'arcade videogame'], ['🎮', 'videogame gaming'], ['🎲', 'game dice board'], ['🃏', 'cards poker'],
+  ['♟️', 'chess boardgame strategy'], ['🎯', 'darts target'], ['🎳', 'bowling'], ['🎱', 'pool billiards'],
+  ['🧩', 'puzzle jigsaw'], ['🧠', 'trivia quiz brain'], ['📚', 'books library reading bookstore bookclub'],
+  ['🎓', 'class school learn lecture'], ['🔭', 'stargaze observatory planetarium telescope'], ['🔬', 'science lab'],
+  ['⚽', 'soccer football futbol'], ['🏀', 'basketball knicks'], ['🏈', 'football superbowl'],
+  ['⚾', 'baseball yankees mets'], ['🎾', 'tennis'], ['🏐', 'volleyball'], ['🏓', 'pingpong pickleball tabletennis'],
+  ['🏸', 'badminton'], ['🥊', 'boxing'], ['🥋', 'martialarts karate judo'], ['⛳', 'golf putt'],
+  ['🎣', 'fishing'], ['🏹', 'archery'], ['⛸️', 'iceskating skate'], ['🎿', 'ski skiing'], ['🏂', 'snowboard'],
+  ['🛹', 'skateboard'], ['🏄', 'surf'], ['🏊', 'swim pool'], ['🛶', 'canoe kayak paddle'],
+  ['⛵', 'sail boat yacht cruise'], ['🚴', 'bike cycling spin'], ['🚵', 'mountainbike'], ['🧗', 'climb bouldering rock'],
+  ['🧘', 'yoga meditation pilates'], ['🏋️', 'gym workout lift weights crossfit'], ['🤸', 'gymnastics'],
+  ['🏃', 'run jog marathon'], ['🚶', 'walk stroll'], ['🥾', 'hike hiking trail'], ['🏕️', 'camping campfire tent'],
+  ['🏞️', 'park nature outdoors'], ['🌳', 'park tree nature'], ['🌲', 'forest woods'], ['🏖️', 'beach shore boardwalk'],
+  ['⛰️', 'mountain hike'], ['🌅', 'sunrise view'], ['🌄', 'sunset view mountain'], ['🎆', 'fireworks'],
+  ['✈️', 'flight travel airport vacation trip getaway'], ['🚗', 'roadtrip drive car'], ['🚂', 'train amtrak'],
+  ['🚇', 'subway metro'], ['🚕', 'taxi cab'], ['🏨', 'hotel resort staycation'], ['🗽', 'statue liberty nyc sightseeing'],
+  ['🏛️', 'museum monument landmark'], ['🏰', 'castle'], ['🗺️', 'explore map adventure'], ['🧭', 'explore adventure wander'],
+  ['🏝️', 'island tropical vacation'], ['🛋️', 'couch stayin netflix cozy lounge relax'], ['📺', 'tv netflix show binge'],
+  ['🛌', 'rest nap sleep'], ['🛁', 'bath relax'], ['💆', 'spa massage sauna facial'], ['💅', 'nails manicure salon'],
+  ['💇', 'haircut salon'], ['🛍️', 'shopping mall thrift vintage'], ['🛒', 'groceries market shop'],
+  ['🎁', 'gift surprise'], ['🎉', 'party celebrate'], ['🥳', 'party celebrate birthday'], ['🎈', 'balloon party'],
+  ['❤️', 'love date romance'], ['💕', 'love romance date'], ['😍', 'love favorite'], ['✨', 'special datenight magic'],
+  ['🌟', 'star special'], ['🔥', 'hot fire lit'], ['🍽️', 'dinner restaurant food eat dining meal'],
+  ['📸', 'photo pictures'], ['🐶', 'dog park pet'], ['🐱', 'cat'], ['🦁', 'zoo lion'], ['🐠', 'aquarium fish'],
+  ['🌷', 'garden flowers botanical'], ['🌸', 'flowers blossom spring'], ['💐', 'flowers bouquet'],
+  ['🕯️', 'candle romantic cozy'], ['🎃', 'pumpkin halloween patch'], ['🎄', 'christmas holiday'],
+  ['❄️', 'snow winter'], ['☀️', 'sunny outdoors'],
 ];
 
 /* ---------- tiny ui helpers ---------- */
@@ -624,11 +767,12 @@ function stepper(now) { // now: 5, 2, 1, or 0 (done)
   const states = { 5: 0, 2: 1, 1: 2, 0: 3 };
   const pos = states[now];
   const cls = (i) => (i < pos ? 'past' : i === pos ? 'now' : '');
+  const cap = { 2: 'pick 2 of 5', 1: 'pick 1 of 2' }[now] || '';
   return `<div class="stepper">
     <div class="step ${cls(0)}">5</div><div class="step-line ${pos > 0 ? 'past' : ''}"></div>
     <div class="step ${cls(1)}">2</div><div class="step-line ${pos > 1 ? 'past' : ''}"></div>
     <div class="step ${cls(2)}">1</div>
-  </div>`;
+  </div>${cap ? `<span class="step-cap">${cap}</span>` : ''}`;
 }
 const houseRule = `<p class="house-rule">House rule — <b>say what you actually want.</b><br>It works out in the end.</p>`;
 
@@ -705,6 +849,7 @@ function confetti() {
    VIEWS
    ============================================================ */
 let keepSet = new Set();   // cut view selection
+let struckSet = new Set(); // cut view: crossed-out (local elimination aid, never shared)
 let finalPick = null;      // close view selection
 let composeCount = 5;      // visible option slots
 let optEmoji = {};         // compose: hand-picked emoji per option index
@@ -776,6 +921,7 @@ function renderHome() {
 }
 
 function renderCut(p) {
+  struckSet = new Set();
   const myName = store.get('name', '');
   const forSelf = myName && myName === p.l;
   keepSet = new Set();
@@ -796,10 +942,11 @@ function renderCut(p) {
             <span class="label">${esc(optLabel(opt))}</span>
             <span class="badge">KEEP ✓</span>
           </button>
+          <button class="strikebtn" data-action="toggle-strike" data-i="${i}" aria-label="cross out ${esc(optName(opt))}">✕</button>
           <button class="mapbtn" data-action="show-map" data-i="${i}" aria-label="open ${esc(optName(opt))} in Maps">${MAP_ICON}</button>
         </div>`).join('')}
     </div>
-    <div class="keep-counter" id="keep-counter">0 of 2 kept</div>
+    <div class="keep-counter" id="keep-counter">0 of 2 kept · ✕ to rule one out</div>
     <div class="card">
       <div class="field-label">Your name — optional</div>
       <input class="text-in" id="cutter-name" maxlength="24" placeholder="you" value="${esc(forSelf ? '' : myName)}">
@@ -928,11 +1075,25 @@ function composeShare() {
 function toggleKeep(btn) {
   const i = Number(btn.dataset.i);
   if (keepSet.has(i)) { keepSet.delete(i); btn.classList.remove('kept'); }
-  else if (keepSet.size < 2) { keepSet.add(i); btn.classList.add('kept'); }
+  else if (keepSet.size < 2) {
+    keepSet.add(i); btn.classList.add('kept');
+    if (struckSet.has(i)) { struckSet.delete(i); btn.closest('.choice-row').classList.remove('struck'); } // keeping un-crosses
+  }
   else { toast('Only 2 — swap one out first'); return; }
+  refreshKeepUI();
+}
+function toggleStrike(btn) {
+  const i = Number(btn.dataset.i);
+  const row = btn.closest('.choice-row');
+  if (struckSet.has(i)) { struckSet.delete(i); row.classList.remove('struck'); return; }
+  struckSet.add(i); row.classList.add('struck');
+  if (keepSet.has(i)) { keepSet.delete(i); row.querySelector('.choice')?.classList.remove('kept'); refreshKeepUI(); } // crossing out drops the keep
+}
+function refreshKeepUI() {
   const counter = $('#keep-counter');
-  counter.innerHTML = keepSet.size === 2 ? '<span class="full">2 of 2 kept ✓</span>' : `${keepSet.size} of 2 kept`;
-  $('#cta').disabled = keepSet.size !== 2;
+  if (counter) counter.innerHTML = keepSet.size === 2 ? '<span class="full">2 of 2 kept ✓</span>' : `${keepSet.size} of 2 kept · ✕ to rule one out`;
+  const cta = $('#cta');
+  if (cta) cta.disabled = keepSet.size !== 2;
   document.querySelectorAll('.choices .choice').forEach((c) => {
     const dim = keepSet.size === 2 && !keepSet.has(Number(c.dataset.i));
     c.closest('.choice-row').classList.toggle('dimmed-row', dim);
@@ -1001,6 +1162,7 @@ app.addEventListener('click', (e) => {
   else if (act === 'add-option') { composeCount = Math.min(6, composeCount + 1); const vals = saveComposeValues(); renderHome(); restoreComposeValues(vals); toast('The ritual is five. Desperation noted 😌'); }
   else if (act === 'compose-share') composeShare();
   else if (act === 'toggle-keep') toggleKeep(el);
+  else if (act === 'toggle-strike') toggleStrike(el);
   else if (act === 'cut-share') cutShare();
   else if (act === 'pick-final') pickFinal(el);
   else if (act === 'undo-final') { finalPick = null; route(); }
@@ -1050,19 +1212,35 @@ function updateEmojiBtn(i) {
   btn.textContent = ex || (v ? emojiFor(v, i) : '＋'); // no pick yet → live-preview the auto-guess
 }
 function closePalette() { $('#emoji-palette')?.remove(); paletteFor = null; }
+function palCells(i, query) {
+  const q = String(query || '').trim().toLowerCase();
+  if (!q) {
+    return `<button class="pal-cell pal-auto" data-action="emoji-set" data-i="${i}">auto</button>`
+      + EMOJI_PALETTE.map((e) => `<button class="pal-cell" data-action="emoji-set" data-i="${i}" data-e="${e}">${e}</button>`).join('');
+  }
+  const match = (kw) => q.includes(' ') ? kw.includes(q) : kw.split(' ').some((t) => t.startsWith(q));
+  const hits = EMOJI_ALL.filter(([, kw]) => match(kw)).slice(0, 64);
+  if (!hits.length) return `<div class="pal-empty">no match — try “pizza”, “park”, “wine”…</div>`;
+  return hits.map(([e]) => `<button class="pal-cell" data-action="emoji-set" data-i="${i}" data-e="${e}">${e}</button>`).join('');
+}
 function openPalette(i) {
   closePalette();
   paletteFor = i;
   const pal = document.createElement('div');
   pal.className = 'emoji-palette';
   pal.id = 'emoji-palette';
-  pal.innerHTML = `<button class="pal-cell pal-auto" data-action="emoji-set" data-i="${i}">auto</button>`
-    + EMOJI_PALETTE.map((e) => `<button class="pal-cell" data-action="emoji-set" data-i="${i}" data-e="${e}">${e}</button>`).join('');
+  pal.innerHTML = `<input class="pal-search" id="pal-search" data-i="${i}" autocomplete="off"
+      placeholder="search emoji — pizza, park, wine…" aria-label="search emoji">
+    <div class="pal-grid" id="pal-grid">${palCells(i, '')}</div>`;
   emojiBtnFor(i).closest('.opt-row').after(pal);
 }
 /* the emoji button live-previews what the cut view will auto-guess */
 app.addEventListener('input', (e) => {
   if (e.target.classList?.contains('opt-in')) updateEmojiBtn(Number(e.target.id.slice(3)));
+  else if (e.target.id === 'pal-search') {
+    const grid = $('#pal-grid');
+    if (grid) grid.innerHTML = palCells(Number(e.target.dataset.i), e.target.value);
+  }
 });
 /* enter → next option field */
 app.addEventListener('keydown', (e) => {
