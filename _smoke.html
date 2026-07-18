@@ -27,6 +27,7 @@ async function run() {
   // --- compose ---
   d.querySelector('#title-in').value = 'Dinner Friday';
   d.querySelector('#name-in').value = 'Tyler';
+  d.querySelector('#note-in').value = 'surprise me, somewhere warm';
   const opts = ['Sushi Yasaka', 'Thai Market', 'Pisticci', 'Shake Shack', 'Taqueria y Fonda'];
   opts.forEach((o, i) => { d.querySelector('#opt' + i).value = o; });
 
@@ -57,6 +58,7 @@ async function run() {
   A('cut has 5 map pins', d.querySelectorAll('.choices .mapbtn').length === 5);
   A('map view deferred (no panel)', !d.querySelector('#geo-panel'));
   A('cut names the lister', d.body.textContent.includes('Tyler listed 5'));
+  A('cut shows the lister note', !!d.querySelector('.round-note') && d.querySelector('.round-note').textContent.includes('surprise me, somewhere warm'));
   A('cut emoji matched sushi', d.body.textContent.includes('🍣'));
   const shakeRow = [...d.querySelectorAll('.choices .choice')].find((c) => c.querySelector('.emoji').textContent === '🌮');
   A('picked emoji overrides auto, label stays clean', !!shakeRow && shakeRow.querySelector('.label').textContent === 'Shake Shack');
@@ -84,6 +86,7 @@ async function run() {
   d = f.contentDocument;
   A('close renders exactly 2', d.querySelectorAll('#final-choices .choice').length === 2);
   A('close names the cutter', d.body.textContent.includes('Partner kept 2'));
+  A('close still carries the note', !!d.querySelector('.round-note') && d.querySelector('.round-note').textContent.includes('surprise me, somewhere warm'));
   A('cut three ghosted below, same style', d.querySelectorAll('#ghost-rows .ghost-row').length === 3 &&
     d.body.textContent.includes('Pisticci'));
   d.querySelectorAll('#final-choices .choice')[0].click();

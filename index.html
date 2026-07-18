@@ -174,6 +174,26 @@
   .share-alt[hidden] { display: none; }
   .form-error { margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--accent); display: none; }
   .form-error.show { display: block; }
+  textarea.note-in {
+    width: 100%; box-sizing: border-box; border: 1.5px solid var(--hairline); outline: none;
+    background: var(--card2); font: inherit; font-size: 15px; font-weight: 550; color: var(--ink);
+    padding: 8px 10px; border-radius: 10px; resize: none; caret-color: var(--accent);
+    line-height: 1.4; margin-top: 2px;
+  }
+  textarea.note-in:focus { border-color: var(--accent); }
+  textarea.note-in::placeholder { color: var(--ink2); opacity: 0.55; font-weight: 500; }
+
+  /* ---------- round note (lister's optional message, rides the link) ---------- */
+  .round-note {
+    margin-top: 9px; font-size: 13.5px; line-height: 1.45; color: var(--ink);
+    background: var(--card2); border-left: 3px solid var(--accent);
+    border-radius: 10px; padding: 8px 12px; text-align: left;
+    overflow-wrap: anywhere; white-space: pre-wrap;
+  }
+  .round-note .note-label {
+    display: block; font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--ink2); margin-bottom: 3px;
+  }
 
   /* ---------- choice cards ---------- */
   .choices { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
@@ -775,6 +795,10 @@ function stepper(now) { // now: 5, 2, 1, or 0 (done)
   </div>${cap ? `<span class="step-cap">${cap}</span>` : ''}`;
 }
 const houseRule = `<p class="house-rule">House rule — <b>say what you actually want.</b><br>It works out in the end.</p>`;
+/* the lister's optional note rides inside the payload (p.n) and shows on every later screen */
+const noteHTML = (p) => p.n
+  ? `<div class="round-note"><span class="note-label">${p.l ? esc(p.l) + '’s note' : 'Note'}</span>${esc(p.n)}</div>`
+  : '';
 
 /* ---------- share: copy-first, share sheet as the optional extra ---------- */
 let lastMsg = '';
@@ -899,6 +923,9 @@ function renderHome() {
         <button class="chip" data-action="chip-title" data-title="Movie night">🍿 Movie</button>
         <button class="chip" data-action="chip-title" data-title="Date night">✨ Date night</button>
       </div>
+      <div class="field-label">Note — optional</div>
+      <textarea class="note-in" id="note-in" maxlength="140" rows="2" autocomplete="off"
+                placeholder="anything to tell them? — “surprise me” · “somewhere cozy” · “your call, I mean it”"></textarea>
       <div class="form-error" id="form-error"></div>
       <button class="cta" data-action="compose-share" id="cta">Copy the link — they keep 2</button>
       <button class="cta msg" data-action="send-msg" hidden>💬 Send in Messages</button>
@@ -931,6 +958,7 @@ function renderCut(p) {
       <p class="lede">${p.l ? esc(p.l) + ' listed ' + p.o.length + '.' : 'Your cut.'}</p>
       <p class="sub">Keep the <b>2</b> you actually want.</p>
       ${p.t ? `<span class="title-chip">${emojiFor(p.t, 0)} ${esc(p.t)}</span>` : ''}
+      ${noteHTML(p)}
       ${forSelf ? `<div class="hint">This is your own list — this link was meant for your partner 😉</div>` : ''}
     </div>
     ${geoPanelHTML()}
@@ -972,6 +1000,7 @@ function renderClose(p) {
       <p class="lede">${p.c ? esc(p.c) + ' kept 2.' : 'Down to 2.'}</p>
       <p class="sub">Your call${p.l ? ', ' + esc(p.l) : ''}. Pick the winner.</p>
       ${p.t ? `<span class="title-chip">${emojiFor(p.t, 0)} ${esc(p.t)}</span>` : ''}
+      ${noteHTML(p)}
     </div>
     ${geoPanelHTML()}
     <div class="choices" id="final-choices">
@@ -1053,6 +1082,7 @@ function composeShare() {
   err.classList.remove('show');
   const name = $('#name-in').value.trim();
   const title = $('#title-in').value.trim();
+  const note = $('#note-in').value.trim();
   const opts = [];
   for (let i = 0; i < composeCount; i++) {
     const v = $('#opt' + i)?.value.trim() ?? '';
@@ -1066,6 +1096,7 @@ function composeShare() {
   if (name) store.set('name', name);
 
   const payload = { v: 1, s: 'cut', t: title, l: name, o: opts };
+  if (note) payload.n = note; // keep the field out of the URL entirely when unused
   const url = linkFor(payload);
   $('#compose-linkrow').innerHTML = linkRowHTML(url);
   logRound({ title, stage: 'sent', url });
@@ -1188,7 +1219,7 @@ app.addEventListener('click', (e) => {
 });
 function saveComposeValues() {
   return {
-    title: $('#title-in')?.value, name: $('#name-in')?.value,
+    title: $('#title-in')?.value, name: $('#name-in')?.value, note: $('#note-in')?.value,
     opts: Array.from({ length: composeCount }, (_, i) => $('#opt' + i)?.value ?? ''),
   };
 }
@@ -1196,6 +1227,7 @@ function restoreComposeValues(v) {
   if (!v) return;
   if ($('#title-in')) $('#title-in').value = v.title ?? '';
   if ($('#name-in')) $('#name-in').value = v.name ?? '';
+  if ($('#note-in')) $('#note-in').value = v.note ?? '';
   v.opts.forEach((val, i) => { if ($('#opt' + i)) $('#opt' + i).value = val; });
   for (let i = 0; i < composeCount; i++) updateEmojiBtn(i);
 }
