@@ -74,6 +74,7 @@ async function run() {
   A('cta enabled at exactly 2', d.querySelector('#cta').disabled === false);
   A('non-kept rows gray out', d.querySelectorAll('.choices .dimmed-row').length === 3);
   d.querySelector('#cutter-name').value = 'Partner';
+  d.querySelector('#cut-note').value = 'number 3 was also fine';
   d.querySelector('[data-action="cut-share"]').click();
   await sleep(400);
   const closeUrl = d.querySelector('#cut-linkrow #share-url')?.dataset.url || '';
@@ -86,13 +87,14 @@ async function run() {
   d = f.contentDocument;
   A('close renders exactly 2', d.querySelectorAll('#final-choices .choice').length === 2);
   A('close names the cutter', d.body.textContent.includes('Partner kept 2'));
-  A('close still carries the note', !!d.querySelector('.round-note') && d.querySelector('.round-note').textContent.includes('surprise me, somewhere warm'));
+  A('close shows the note passed back', !!d.querySelector('.round-note') && d.querySelector('.round-note').textContent.includes('number 3 was also fine'));
   A('cut three ghosted below, same style', d.querySelectorAll('#ghost-rows .ghost-row').length === 3 &&
     d.body.textContent.includes('Pisticci'));
   d.querySelectorAll('#final-choices .choice')[0].click();
   await sleep(500);
   A('winner card appears', !!d.querySelector('#close-after .lede'));
   A('undo offered', !!d.querySelector('[data-action="undo-final"]'));
+  d.querySelector('#close-note').value = 'it was close';
   d.querySelector('[data-action="close-share"]').click();
   await sleep(400);
   const doneUrl = d.querySelector('#close-linkrow #share-url')?.dataset.url || '';
@@ -105,6 +107,7 @@ async function run() {
   d = f.contentDocument;
   A('done shows trophy', !!d.querySelector('.trophy'));
   A('done shows winner', d.body.textContent.includes('Sushi Yasaka'));
+  A('done shows the verdict note', !!d.querySelector('.round-note') && d.querySelector('.round-note').textContent.includes('it was close'));
   A('done credits the ritual', d.body.textContent.includes('kept 2'));
 
   // --- history + broken link ---

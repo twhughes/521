@@ -178,7 +178,7 @@
     width: 100%; box-sizing: border-box; border: 1.5px solid var(--hairline); outline: none;
     background: var(--card2); font: inherit; font-size: 15px; font-weight: 550; color: var(--ink);
     padding: 8px 10px; border-radius: 10px; resize: none; caret-color: var(--accent);
-    line-height: 1.4; margin-top: 2px;
+    line-height: 1.4; margin-top: 2px; text-align: left;
   }
   textarea.note-in:focus { border-color: var(--accent); }
   textarea.note-in::placeholder { color: var(--ink2); opacity: 0.55; font-weight: 500; }
@@ -795,9 +795,11 @@ function stepper(now) { // now: 5, 2, 1, or 0 (done)
   </div>${cap ? `<span class="step-cap">${cap}</span>` : ''}`;
 }
 const houseRule = `<p class="house-rule">House rule — <b>say what you actually want.</b><br>It works out in the end.</p>`;
-/* the lister's optional note rides inside the payload (p.n) and shows on every later screen */
-const noteHTML = (p) => p.n
-  ? `<div class="round-note"><span class="note-label">${p.l ? esc(p.l) + '’s note' : 'Note'}</span>${esc(p.n)}</div>`
+/* notes pass back and forth: each handoff can carry one from the sender, shown to the
+   opener of the link. n = lister's (compose), kn = cutter's (cut), wn = lister's (verdict).
+   They all stay in the payload for the round's whole life; each screen shows the incoming one. */
+const noteBlock = (who, text) => text
+  ? `<div class="round-note"><span class="note-label">${who ? esc(who) + '’s note' : 'Note'}</span>${esc(text)}</div>`
   : '';
 
 /* ---------- share: copy-first, share sheet as the optional extra ---------- */
@@ -958,7 +960,7 @@ function renderCut(p) {
       <p class="lede">${p.l ? esc(p.l) + ' listed ' + p.o.length + '.' : 'Your cut.'}</p>
       <p class="sub">Keep the <b>2</b> you actually want.</p>
       ${p.t ? `<span class="title-chip">${emojiFor(p.t, 0)} ${esc(p.t)}</span>` : ''}
-      ${noteHTML(p)}
+      ${noteBlock(p.l, p.n)}
       ${forSelf ? `<div class="hint">This is your own list — this link was meant for your partner 😉</div>` : ''}
     </div>
     ${geoPanelHTML()}
@@ -978,6 +980,9 @@ function renderCut(p) {
     <div class="card">
       <div class="field-label">Your name — optional</div>
       <input class="text-in" id="cutter-name" maxlength="24" placeholder="you" value="${esc(forSelf ? '' : myName)}">
+      <div class="field-label">Note back — optional</div>
+      <textarea class="note-in" id="cut-note" maxlength="140" rows="2" autocomplete="off"
+                placeholder="anything to say back? — “number 3 was also fine” · “this was hard”"></textarea>
       <button class="cta" data-action="cut-share" id="cta" disabled>Copy the link back</button>
       <button class="cta msg" data-action="send-msg" hidden>💬 Send in Messages</button>
       <button class="share-alt" data-action="share-alt" hidden>📤 or use the share sheet</button>
@@ -1000,7 +1005,7 @@ function renderClose(p) {
       <p class="lede">${p.c ? esc(p.c) + ' kept 2.' : 'Down to 2.'}</p>
       <p class="sub">Your call${p.l ? ', ' + esc(p.l) : ''}. Pick the winner.</p>
       ${p.t ? `<span class="title-chip">${emojiFor(p.t, 0)} ${esc(p.t)}</span>` : ''}
-      ${noteHTML(p)}
+      ${noteBlock(p.c, p.kn)}
     </div>
     ${geoPanelHTML()}
     <div class="choices" id="final-choices">
@@ -1041,6 +1046,7 @@ function renderDone(p) {
       <div class="trophy">🏆</div>
       <div class="winner-name">${esc(winner)}</div>
       <p class="winner-sub">${p.t ? esc(p.t) + ' — ' : ''}decided.</p>
+      ${noteBlock(p.l, p.wn)}
       <p class="ritual-note">${p.l && p.c
         ? `${esc(p.l)} listed ${p.o.length} · ${esc(p.c)} kept 2 · ${esc(p.l)} picked the one`
         : `listed ${p.o.length} · kept 2 · picked 1 — the 5·2·1 way`}</p>
@@ -1142,6 +1148,8 @@ function cutShare() {
   if (cutter) store.set('name', cutter);
   const kept = [...keepSet].sort((a, b) => a - b);
   const payload = { ...p, s: 'close', c: cutter, k: kept };
+  const note = $('#cut-note').value.trim();
+  if (note) payload.kn = note;
   const url = linkFor(payload);
   $('#cut-linkrow').innerHTML = linkRowHTML(url);
   logRound({ title: p.t, stage: 'cut', url });
@@ -1167,6 +1175,9 @@ function pickFinal(btn) {
     <div class="card" style="text-align:center">
       <p class="lede">🏆 ${esc(p.o[finalPick])}</p>
       <p class="sub">Now the sacred final step: tell ${esc(p.c || 'them')}.</p>
+      <div class="field-label" style="text-align:left">Note with the verdict — optional</div>
+      <textarea class="note-in" id="close-note" maxlength="140" rows="2" autocomplete="off"
+                placeholder="a last word? — “it was close” · “good keeps”"></textarea>
       <button class="cta" data-action="close-share" id="close-cta">Copy the verdict${p.c ? ' for ' + esc(p.c) : ''}</button>
       <button class="cta msg" data-action="send-msg" hidden>💬 Send in Messages</button>
       <button class="cta secondary" data-action="undo-final">wait, let me rethink</button>
@@ -1179,6 +1190,8 @@ function pickFinal(btn) {
 function closeShare() {
   const p = currentPayload();
   const payload = { ...p, s: 'done', w: finalPick };
+  const note = $('#close-note')?.value.trim();
+  if (note) payload.wn = note;
   const url = linkFor(payload);
   $('#close-linkrow').innerHTML = linkRowHTML(url);
   finishShare(`🏆 ${p.o[finalPick]}! ${url}`, '#close-cta', 'Copied ✓ — go tell them');
