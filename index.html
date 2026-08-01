@@ -890,6 +890,11 @@ function renderHome() {
   const name = store.get('name', '');
   const history = store.get('history', []);
   paletteFor = null;
+  const draft = store.get('draft', null); // a half-typed five survives reloads until it's sent
+  if (draft) {
+    composeCount = Math.min(6, Math.max(composeCount, draft.count || 5));
+    optEmoji = { ...draft.emoji };
+  }
   const optRows = Array.from({ length: composeCount }, (_, i) => `
     <div class="opt-row">
       <div class="opt-num">${i + 1}</div>
@@ -948,6 +953,13 @@ function renderHome() {
 
     ${houseRule}
   `;
+  if (draft) {
+    if (draft.title) $('#title-in').value = draft.title;
+    if (draft.name) $('#name-in').value = draft.name;
+    if (draft.note) $('#note-in').value = draft.note;
+    (draft.opts || []).forEach((v, i) => { const el = $('#opt' + i); if (el && v) el.value = v; });
+    for (let i = 0; i < composeCount; i++) updateEmojiBtn(i);
+  }
 }
 
 function renderCut(p) {
@@ -1105,6 +1117,7 @@ function composeShare() {
   const payload = { v: 1, s: 'cut', t: title, l: name, o: opts };
   if (note) payload.n = note; // keep the field out of the URL entirely when unused
   const url = linkFor(payload);
+  store.set('draft', null); // sent — the draft's job is done
   $('#compose-linkrow').innerHTML = linkRowHTML(url);
   logRound({ title, stage: 'sent', url });
   finishShare(url, '#cta', 'Copied ✓ — now paste it to them');
@@ -1201,10 +1214,12 @@ function closeShare() {
 /* ---------- event delegation ---------- */
 app.addEventListener('click', (e) => {
   const el = e.target.closest('[data-action]');
+  const act = el?.dataset.action;
+  // gave up on the emoji? tapping anywhere else puts the palette away
+  if (paletteFor !== null && act !== 'emoji-pick' && !e.target.closest('.emoji-palette')) closePalette();
   if (!el) return;
-  const act = el.dataset.action;
-  if (act === 'chip-title') { $('#title-in').value = el.dataset.title; }
-  else if (act === 'add-option') { composeCount = Math.min(6, composeCount + 1); const vals = saveComposeValues(); renderHome(); restoreComposeValues(vals); toast('The ritual is five. Desperation noted 😌'); }
+  if (act === 'chip-title') { $('#title-in').value = el.dataset.title; saveDraft(); }
+  else if (act === 'add-option') { composeCount = Math.min(6, composeCount + 1); const vals = saveComposeValues(); renderHome(); restoreComposeValues(vals); saveDraft(); toast('The ritual is five. Desperation noted 😌'); }
   else if (act === 'compose-share') composeShare();
   else if (act === 'toggle-keep') toggleKeep(el);
   else if (act === 'toggle-strike') toggleStrike(el);
@@ -1219,6 +1234,7 @@ app.addEventListener('click', (e) => {
     if (el.dataset.e) optEmoji[i] = el.dataset.e; else delete optEmoji[i];
     closePalette();
     updateEmojiBtn(i);
+    saveDraft();
   }
   else if (act === 'show-map') showMap(Number(el.dataset.i));
   else if (act === 'send-msg') { if (lastMsg) location.href = 'sms:&body=' + encodeURIComponent(lastMsg); }
@@ -1231,6 +1247,9 @@ app.addEventListener('click', (e) => {
     if (h?.url) location.href = h.url;
   }
 });
+function saveDraft() {
+  store.set('draft', { ...saveComposeValues(), emoji: { ...optEmoji }, count: composeCount });
+}
 function saveComposeValues() {
   return {
     title: $('#title-in')?.value, name: $('#name-in')?.value, note: $('#note-in')?.value,
@@ -1282,11 +1301,12 @@ function openPalette(i) {
 }
 /* the emoji button live-previews what the cut view will auto-guess */
 app.addEventListener('input', (e) => {
-  if (e.target.classList?.contains('opt-in')) updateEmojiBtn(Number(e.target.id.slice(3)));
+  if (e.target.classList?.contains('opt-in')) { updateEmojiBtn(Number(e.target.id.slice(3))); saveDraft(); }
   else if (e.target.id === 'pal-search') {
     const grid = $('#pal-grid');
     if (grid) grid.innerHTML = palCells(Number(e.target.dataset.i), e.target.value);
   }
+  else if (['title-in', 'name-in', 'note-in'].includes(e.target.id)) saveDraft();
 });
 /* enter → next option field */
 app.addEventListener('keydown', (e) => {
@@ -1320,11 +1340,13 @@ app.addEventListener('paste', (e) => {
   }
   lines.slice(0, 6 - start).forEach((l, j) => { const el = $('#opt' + (start + j)); if (el) el.value = l.slice(0, 64); });
   for (let i = 0; i < composeCount; i++) updateEmojiBtn(i);
+  saveDraft();
   toast('Filled from your list ✂️');
 });
 
-/* number keys toggle choices (desktop nicety) */
+/* number keys toggle choices, Escape puts the emoji palette away (desktop niceties) */
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && paletteFor !== null) { closePalette(); return; }
   if (e.target.tagName === 'INPUT') return;
   const n = Number(e.key);
   if (n >= 1 && n <= 7) {

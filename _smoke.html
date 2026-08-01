@@ -24,6 +24,14 @@ async function run() {
   await sleep(200);
   A('paste fills the five', d.querySelector('#opt0').value === 'tacos' && d.querySelector('#opt4').value === 'oyster bar');
 
+  // --- a half-typed five survives a reload ---
+  const reloaded = new Promise((r) => { f.onload = r; });
+  f.contentWindow.location.reload();
+  await reloaded;
+  await sleep(300);
+  d = f.contentDocument;
+  A('draft survives reload', d.querySelector('#opt0').value === 'tacos' && d.querySelector('#opt4').value === 'oyster bar');
+
   // --- compose ---
   d.querySelector('#title-in').value = 'Dinner Friday';
   d.querySelector('#name-in').value = 'Tyler';
@@ -32,9 +40,14 @@ async function run() {
   opts.forEach((o, i) => { d.querySelector('#opt' + i).value = o; });
 
   // --- emoji picker: explicit pick on option 4, option 5 becomes emoji-only ---
-  d.querySelectorAll('.emoji-btn')[3].click();
+  d.querySelectorAll('.emoji-btn')[2].click();
   await sleep(100);
   A('emoji palette opens', !!d.querySelector('.emoji-palette'));
+  d.querySelector('#title-in').click(); // gave up — tap elsewhere
+  await sleep(100);
+  A('palette closes on outside tap', !d.querySelector('.emoji-palette'));
+  d.querySelectorAll('.emoji-btn')[3].click();
+  await sleep(100);
   d.querySelector('.pal-cell[data-e="🌮"]').click();
   await sleep(100);
   A('palette closes on pick', !d.querySelector('.emoji-palette'));
