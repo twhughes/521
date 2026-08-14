@@ -365,22 +365,38 @@ const store = {
   set(k, v) { try { localStorage.setItem('521.' + k, JSON.stringify(v)); } catch {} },
 };
 
-/* ---------- codec: JSON → UTF-8 → base64url ---------- */
-function encodePayload(obj) {
-  const bytes = new TextEncoder().encode(JSON.stringify(obj));
+/* ---------- codec ----------
+   v2 (current): JSON → deflate-raw → base64url, hash prefixed '2'.
+   iMessage's linkifier truncates long URLs — the head becomes a generic
+   preview, the tail dead trailing text — so the hash must stay short.
+   v1 (legacy): bare base64url of JSON; a v1 hash always starts "ey"
+   ('{"…' encoded), never '2', so old links in threads keep decoding. */
+function b64uEncode(bytes) {
   let bin = '';
   for (const b of bytes) bin += String.fromCharCode(b);
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
-function decodePayload(str) {
+function b64uDecode(str) {
   let b64 = str.replace(/-/g, '+').replace(/_/g, '/');
   while (b64.length % 4) b64 += '=';
-  const bin = atob(b64);
-  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+  return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+}
+async function pipeBytes(bytes, stream) {
+  return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer());
+}
+async function encodePayload(obj) {
+  const bytes = new TextEncoder().encode(JSON.stringify(obj));
+  if (typeof CompressionStream === 'undefined') return b64uEncode(bytes); // pre-16.4 Safari: longer v1 link beats no link
+  return '2' + b64uEncode(await pipeBytes(bytes, new CompressionStream('deflate-raw')));
+}
+async function decodePayload(str) {
+  const bytes = str.startsWith('2')
+    ? await pipeBytes(b64uDecode(str.slice(1)), new DecompressionStream('deflate-raw'))
+    : b64uDecode(str);
   return JSON.parse(new TextDecoder().decode(bytes));
 }
-const linkFor = (payload) =>
-  location.origin + location.pathname + '#' + encodePayload(payload);
+const linkFor = async (payload) =>
+  location.origin + location.pathname + '#' + await encodePayload(payload);
 
 /* ---------- emoji matcher ---------- */
 const EMOJI_RULES = [
@@ -670,7 +686,7 @@ function showMap(i) {
     m.openPopup();
     $('#geo-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } else {
-    const p = currentPayload();
+    const p = routedPayload; // decoded once in route(); sync here so window.open keeps its user gesture
     if (p?.o?.[i] !== undefined) window.open(mapsUrl(optName(p.o[i])), '_blank', 'noopener');
   }
 }
@@ -1090,13 +1106,13 @@ function renderBroken() {
 /* ============================================================
    ACTIONS
    ============================================================ */
-function currentPayload() {
+async function currentPayload() {
   const hash = location.hash.slice(1);
   if (!hash) return null;
   return decodePayload(hash);
 }
 
-function composeShare() {
+async function composeShare() {
   const err = $('#form-error');
   err.classList.remove('show');
   const name = $('#name-in').value.trim();
@@ -1105,7 +1121,8 @@ function composeShare() {
   const opts = [];
   for (let i = 0; i < composeCount; i++) {
     const v = $('#opt' + i)?.value.trim() ?? '';
-    const e = optEmoji[i];
+    let e = optEmoji[i];
+    if (v && e && emojiFor(v, opts.length) === e) e = null; // receiver re-derives it — keep the link short
     if (v && e) opts.push(e + ' ' + v);
     else if (v || e) opts.push(v || e); // a lone emoji is a legitimate option
   }
@@ -1116,7 +1133,7 @@ function composeShare() {
 
   const payload = { v: 1, s: 'cut', t: title, l: name, o: opts };
   if (note) payload.n = note; // keep the field out of the URL entirely when unused
-  const url = linkFor(payload);
+  const url = await linkFor(payload);
   store.set('draft', null); // sent — the draft's job is done
   $('#compose-linkrow').innerHTML = linkRowHTML(url);
   logRound({ title, stage: 'sent', url });
@@ -1156,24 +1173,24 @@ function refreshKeepUI() {
   }
 }
 
-function cutShare() {
-  const p = currentPayload();
+async function cutShare() {
+  const p = await currentPayload();
   const cutter = $('#cutter-name').value.trim();
   if (cutter) store.set('name', cutter);
   const kept = [...keepSet].sort((a, b) => a - b);
   const payload = { ...p, s: 'close', c: cutter, k: kept };
   const note = $('#cut-note').value.trim();
   if (note) payload.kn = note;
-  const url = linkFor(payload);
+  const url = await linkFor(payload);
   $('#cut-linkrow').innerHTML = linkRowHTML(url);
   logRound({ title: p.t, stage: 'cut', url });
   finishShare(url, '#cta', 'Copied ✓ — paste it back');
 }
 
-function pickFinal(btn) {
+async function pickFinal(btn) {
   if (finalPick !== null) return;
   finalPick = Number(btn.dataset.i);
-  const p = currentPayload();
+  const p = await currentPayload();
   document.querySelectorAll('#final-choices .choice').forEach((c) => {
     if (Number(c.dataset.i) === finalPick) c.classList.add('winner', 'kept');
     else { c.classList.add('dimmed'); c.closest('.choice-row').classList.add('dimmed-row'); }
@@ -1183,7 +1200,7 @@ function pickFinal(btn) {
   if (geo.markers[finalPick]) showMap(finalPick);
   confetti();
   const payload = { ...p, s: 'done', w: finalPick };
-  const url = linkFor(payload);
+  const url = await linkFor(payload);
   logRound({ title: p.t, stage: 'closed', winner: p.o[finalPick], url });
   $('#close-after').innerHTML = `
     <div class="card" style="text-align:center">
@@ -1201,12 +1218,12 @@ function pickFinal(btn) {
   $('#close-after').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-function closeShare() {
-  const p = currentPayload();
+async function closeShare() {
+  const p = await currentPayload();
   const payload = { ...p, s: 'done', w: finalPick };
   const note = $('#close-note')?.value.trim();
   if (note) payload.wn = note;
-  const url = linkFor(payload);
+  const url = await linkFor(payload);
   $('#close-linkrow').innerHTML = linkRowHTML(url);
   finishShare(`🏆 ${p.o[finalPick]}! ${url}`, '#close-cta', 'Copied ✓ — go tell them');
 }
@@ -1356,13 +1373,15 @@ document.addEventListener('keydown', (e) => {
 });
 
 /* ---------- router ---------- */
-function route() {
+let routedPayload = null;
+async function route() {
   keepSet = new Set(); finalPick = null; resetGeo();
   let p = null;
   const hash = location.hash.slice(1);
   if (hash) {
-    try { p = decodePayload(hash); } catch { renderBroken(); return; }
+    try { p = await decodePayload(hash); } catch { renderBroken(); return; }
   }
+  routedPayload = p;
   if (!p) { renderHome(); document.title = '5 · 2 · 1'; return; }
   if (p.s === 'cut' && Array.isArray(p.o) && p.o.length >= 2) { renderCut(p); document.title = `5·2·1 — ${p.t || 'your cut'}`; }
   else if (p.s === 'close' && Array.isArray(p.k) && p.k.length === 2) { renderClose(p); document.title = `5·2·1 — ${p.t ? p.t + ' · ' : ''}your pick`; }
