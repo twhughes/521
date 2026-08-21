@@ -354,6 +354,9 @@
    Payload (hash fragment, base64url of JSON):
      { v:1, s:'cut'|'close'|'done', t:title, l:lister, c:cutter,
        o:[options], k:[keptIdx,keptIdx], w:winnerIdx }
+   s:'draft' is a local-only fourth stage: it seeds the compose
+   form (t/o/n) and never travels between players — used by
+   deep links from dictation tools on the lister's own device.
    ============================================================ */
 
 const $ = (sel) => document.querySelector(sel);
@@ -1383,6 +1386,18 @@ async function route() {
   }
   routedPayload = p;
   if (!p) { renderHome(); document.title = '5 · 2 · 1'; return; }
+  if (p.s === 'draft' && Array.isArray(p.o)) {
+    // deep-link prefill (e.g. dictated via VoiceInk): seed the compose draft and open compose —
+    // the round only becomes real when the lister reviews and taps share, so the hash is stripped here
+    store.set('draft', {
+      title: p.t || '', name: store.get('name', ''), note: p.n || '',
+      opts: p.o.slice(0, 6).map((o) => String(o ?? '')), emoji: {}, count: Math.min(6, Math.max(5, p.o.length)),
+    });
+    history.replaceState(null, '', location.pathname + location.search);
+    routedPayload = null;
+    renderHome(); document.title = '5 · 2 · 1';
+    return;
+  }
   if (p.s === 'cut' && Array.isArray(p.o) && p.o.length >= 2) { renderCut(p); document.title = `5·2·1 — ${p.t || 'your cut'}`; }
   else if (p.s === 'close' && Array.isArray(p.k) && p.k.length === 2) { renderClose(p); document.title = `5·2·1 — ${p.t ? p.t + ' · ' : ''}your pick`; }
   else if (p.s === 'done' && Number.isInteger(p.w) && p.o?.[p.w] !== undefined) { renderDone(p); document.title = `5·2·1 — 🏆 ${p.o[p.w]}`; }

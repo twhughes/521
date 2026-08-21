@@ -139,11 +139,25 @@ async function run() {
   d = f.contentDocument;
   A('legacy v1 link still decodes', d.querySelectorAll('.choices .choice').length === 3 && d.body.textContent.includes('Motorino'));
 
+  // --- draft deep link (voice prefill): seeds compose, strips hash ---
+  const W2 = f.contentWindow;
+  const draftHash = await W2.encodePayload({ v: 1, s: 'draft', t: 'Thursday dinner', o: ['Consulate happy hour', 'Optimist', 'Pecora Bianca'], n: 'from voice' });
+  W2.location.href = '/index.html#' + draftHash;
+  await sleep(400);
+  d = f.contentDocument;
+  A('draft link opens compose', d.querySelectorAll('.opt-in').length >= 5);
+  A('draft link strips its hash', f.contentWindow.location.hash === '');
+  A('draft seeds title', d.querySelector('#title-in')?.value === 'Thursday dinner');
+  A('draft seeds options', d.querySelector('#opt0')?.value === 'Consulate happy hour' && d.querySelector('#opt2')?.value === 'Pecora Bianca');
+  A('draft seeds note', d.querySelector('#note-in')?.value === 'from voice');
+  A('draft leaves empty slots empty', (d.querySelector('#opt3')?.value ?? '') === '');
+
   f.contentWindow.location.href = '/index.html';
   await sleep(400);
   d = f.contentDocument;
   A('history remembers rounds', d.body.textContent.includes('Recent rounds'));
   A('history logged the win', d.body.textContent.includes('🏆'));
+  A('draft survives into a fresh load', d.querySelector('#opt1')?.value === 'Optimist');
 
   finish();
 }
