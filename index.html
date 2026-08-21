@@ -168,11 +168,6 @@
   }
   .duo { display: flex; gap: 12px; margin-top: 8px; }
   .duo > div { flex: 1; min-width: 0; }
-  .share-alt {
-    display: block; margin: 8px auto 0; background: none; border: none; cursor: pointer;
-    font: inherit; font-size: 12.5px; font-weight: 700; color: var(--accent);
-  }
-  .share-alt[hidden] { display: none; }
   .form-error { margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--accent); display: none; }
   .form-error.show { display: block; }
   textarea.note-in {
@@ -822,19 +817,43 @@ const noteBlock = (who, text) => text
   ? `<div class="round-note"><span class="note-label">${who ? esc(who) + '’s note' : 'Note'}</span>${esc(text)}</div>`
   : '';
 
-/* ---------- share: copy-first, share sheet as the optional extra ---------- */
+/* ---------- share: copy-first ----------
+   Safari revokes clipboard permission the moment the click task hits an
+   await, so copyText takes a PROMISE of the text and hands it to the
+   clipboard synchronously (ClipboardItem) — the one WebKit-blessed way to
+   copy content still being computed. writeText + execCommand as fallbacks,
+   and the CTA only claims "Copied" when a strategy actually succeeded. */
 let lastMsg = '';
-async function finishShare(msg, ctaSel, doneLabel) {
-  lastMsg = msg;
-  const alt = document.querySelector('[data-action="share-alt"]');
-  if (alt && navigator.share) alt.hidden = false;
+async function copyText(textOrPromise) {
+  const text = () => Promise.resolve(textOrPromise).then(String);
+  try {
+    if (navigator.clipboard?.write && window.ClipboardItem) {
+      await navigator.clipboard.write([new ClipboardItem({
+        'text/plain': text().then((t) => new Blob([t], { type: 'text/plain' })),
+      })]);
+      return true;
+    }
+  } catch {}
+  try { await navigator.clipboard.writeText(await text()); return true; } catch {}
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = await text();
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    return ok;
+  } catch { return false; }
+}
+async function finishShare(msgP, ctaSel, doneLabel) {
+  const copied = copyText(msgP); // must start inside the click task — see copyText
+  lastMsg = await Promise.resolve(msgP).then(String);
   const msgBtn = document.querySelector('[data-action="send-msg"]');
   if (msgBtn) msgBtn.hidden = false;   // Messages opens with the text prefilled — no paste
-  let ok = true;
-  try { await navigator.clipboard.writeText(msg); } catch { ok = false; }
   const cta = document.querySelector(ctaSel);
-  if (ok) { toast('Copied — paste it anywhere'); if (cta) cta.textContent = doneLabel; }
-  else { toast('Copy blocked — use the link row below'); }
+  if (await copied) { toast('Copied — paste it anywhere'); if (cta) cta.textContent = doneLabel; }
+  else { toast('Copy blocked — tap the link below to copy'); if (cta) cta.textContent = 'Tap the link below to copy'; }
 }
 function linkRowHTML(url) {
   return `<button class="linkrow" data-action="copy-url" data-url="${esc(url)}" id="share-url">
@@ -956,7 +975,6 @@ function renderHome() {
       <div class="form-error" id="form-error"></div>
       <button class="cta" data-action="compose-share" id="cta">Copy the link — they keep 2</button>
       <button class="cta msg" data-action="send-msg" hidden>💬 Send in Messages</button>
-      <button class="share-alt" data-action="share-alt" hidden>📤 or use the share sheet</button>
       <div id="compose-linkrow"></div>
     </div>
 
@@ -1017,7 +1035,6 @@ function renderCut(p) {
                 placeholder="anything to say back? — “number 3 was also fine” · “this was hard”"></textarea>
       <button class="cta" data-action="cut-share" id="cta" disabled>Copy the link back</button>
       <button class="cta msg" data-action="send-msg" hidden>💬 Send in Messages</button>
-      <button class="share-alt" data-action="share-alt" hidden>📤 or use the share sheet</button>
       <div id="cut-linkrow"></div>
     </div>
     <details class="explain"><summary>First time? How 5·2·1 works</summary>
@@ -1136,11 +1153,13 @@ async function composeShare() {
 
   const payload = { v: 1, s: 'cut', t: title, l: name, o: opts };
   if (note) payload.n = note; // keep the field out of the URL entirely when unused
-  const url = await linkFor(payload);
+  const urlP = linkFor(payload);
+  const shared = finishShare(urlP, '#cta', 'Copied ✓ — now paste it to them'); // before any await
+  const url = await urlP;
   store.set('draft', null); // sent — the draft's job is done
   $('#compose-linkrow').innerHTML = linkRowHTML(url);
   logRound({ title, stage: 'sent', url });
-  finishShare(url, '#cta', 'Copied ✓ — now paste it to them');
+  await shared;
 }
 
 function toggleKeep(btn) {
@@ -1177,17 +1196,21 @@ function refreshKeepUI() {
 }
 
 async function cutShare() {
-  const p = await currentPayload();
   const cutter = $('#cutter-name').value.trim();
   if (cutter) store.set('name', cutter);
-  const kept = [...keepSet].sort((a, b) => a - b);
-  const payload = { ...p, s: 'close', c: cutter, k: kept };
   const note = $('#cut-note').value.trim();
-  if (note) payload.kn = note;
-  const url = await linkFor(payload);
+  const built = (async () => {
+    const p = await currentPayload();
+    const kept = [...keepSet].sort((a, b) => a - b);
+    const payload = { ...p, s: 'close', c: cutter, k: kept };
+    if (note) payload.kn = note;
+    return { p, url: await linkFor(payload) };
+  })();
+  const shared = finishShare(built.then((b) => b.url), '#cta', 'Copied ✓ — paste it back'); // before any await
+  const { p, url } = await built;
   $('#cut-linkrow').innerHTML = linkRowHTML(url);
   logRound({ title: p.t, stage: 'cut', url });
-  finishShare(url, '#cta', 'Copied ✓ — paste it back');
+  await shared;
 }
 
 async function pickFinal(btn) {
@@ -1215,20 +1238,23 @@ async function pickFinal(btn) {
       <button class="cta" data-action="close-share" id="close-cta">Copy the verdict${p.c ? ' for ' + esc(p.c) : ''}</button>
       <button class="cta msg" data-action="send-msg" hidden>💬 Send in Messages</button>
       <button class="cta secondary" data-action="undo-final">wait, let me rethink</button>
-      <button class="share-alt" data-action="share-alt" hidden>📤 or send with the share sheet</button>
       <div id="close-linkrow"></div>
     </div>`;
   $('#close-after').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 async function closeShare() {
-  const p = await currentPayload();
-  const payload = { ...p, s: 'done', w: finalPick };
   const note = $('#close-note')?.value.trim();
-  if (note) payload.wn = note;
-  const url = await linkFor(payload);
+  const built = (async () => {
+    const p = await currentPayload();
+    const payload = { ...p, s: 'done', w: finalPick };
+    if (note) payload.wn = note;
+    return { p, url: await linkFor(payload) };
+  })();
+  const shared = finishShare(built.then(({ p, url }) => `🏆 ${p.o[finalPick]}! ${url}`), '#close-cta', 'Copied ✓ — go tell them'); // before any await
+  const { url } = await built;
   $('#close-linkrow').innerHTML = linkRowHTML(url);
-  finishShare(`🏆 ${p.o[finalPick]}! ${url}`, '#close-cta', 'Copied ✓ — go tell them');
+  await shared;
 }
 
 /* ---------- event delegation ---------- */
@@ -1258,9 +1284,8 @@ app.addEventListener('click', (e) => {
   }
   else if (act === 'show-map') showMap(Number(el.dataset.i));
   else if (act === 'send-msg') { if (lastMsg) location.href = 'sms:&body=' + encodeURIComponent(lastMsg); }
-  else if (act === 'share-alt') { if (navigator.share && lastMsg) navigator.share({ text: lastMsg }).catch(() => {}); }
   else if (act === 'copy-url') {
-    navigator.clipboard?.writeText(el.dataset.url).then(() => toast('Link copied ✓'), () => toast('Long-press the link to copy'));
+    copyText(el.dataset.url).then((ok) => toast(ok ? 'Link copied ✓' : 'Long-press the link to copy'));
   }
   else if (act === 'open-history') {
     const h = store.get('history', [])[Number(el.dataset.i)];
@@ -1318,6 +1343,7 @@ function openPalette(i) {
       placeholder="search emoji — pizza, park, wine…" aria-label="search emoji">
     <div class="pal-grid" id="pal-grid">${palCells(i, '')}</div>`;
   emojiBtnFor(i).closest('.opt-row').after(pal);
+  pal.querySelector('#pal-search').focus(); // start typing immediately
 }
 /* the emoji button live-previews what the cut view will auto-guess */
 app.addEventListener('input', (e) => {

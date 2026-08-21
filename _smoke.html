@@ -43,6 +43,7 @@ async function run() {
   d.querySelectorAll('.emoji-btn')[2].click();
   await sleep(100);
   A('emoji palette opens', !!d.querySelector('.emoji-palette'));
+  A('palette autofocuses its search box', d.activeElement === d.querySelector('#pal-search'));
   d.querySelector('#title-in').click(); // gave up — tap elsewhere
   await sleep(100);
   A('palette closes on outside tap', !d.querySelector('.emoji-palette'));
@@ -61,6 +62,8 @@ async function run() {
   await sleep(400);
   const cutUrl = d.querySelector('#compose-linkrow #share-url')?.dataset.url || '';
   A('compose generates cut link', cutUrl.includes('#'));
+  A('share sheet is gone', !d.querySelector('[data-action="share-alt"]'));
+  A('send-in-messages revealed', d.querySelector('[data-action="send-msg"]')?.hidden === false);
   log.push('CUTURL ' + cutUrl);
 
   // --- cut (hash change, same document) ---
