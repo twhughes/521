@@ -874,6 +874,36 @@ function fmtDay(ts) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+/* ---------- local option memory (THIS PHONE ONLY — never travels in a link) ----------
+   Remembers the option names you've listed and the emoji you picked for each, so the next
+   round can autocomplete a name and pre-fill your emoji. It lives only in localStorage and
+   is read only to seed the on-screen fields — the payload is still built purely from those
+   fields (see composeShare), so nothing here ever reaches the other person, and the shared
+   emojiFor() guesser stays untouched so their re-derivation is unaffected. */
+function rememberOpts(getVal) {
+  const mem = store.get('optMem', {});
+  for (let i = 0; i < composeCount; i++) {
+    const s = splitEmoji(String(getVal(i) || '').trim());
+    const label = s.rest.trim();
+    if (!label) continue;                         // skip blanks and lone-emoji options
+    const key = label.toLowerCase();
+    const prev = mem[key];
+    const chosen = optEmoji[i] || s.e || prev?.emoji || null;
+    mem[key] = { label, emoji: chosen, n: (prev?.n || 0) + 1, ts: Date.now() };
+  }
+  store.set('optMem', mem);
+}
+function rememberedEmoji(text) {
+  const label = splitEmoji(String(text || '')).rest.trim().toLowerCase();
+  return (label && store.get('optMem', {})[label]?.emoji) || null;
+}
+function optSuggestList() { // native autocomplete over your own past option names
+  const items = Object.values(store.get('optMem', {}))
+    .sort((a, b) => (b.n - a.n) || (b.ts - a.ts))
+    .slice(0, 24);
+  return `<datalist id="opt-suggest">${items.map((o) => `<option value="${esc(o.label)}"></option>`).join('')}</datalist>`;
+}
+
 /* ---------- confetti ---------- */
 function confetti() {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -919,6 +949,7 @@ let finalPick = null;      // close view selection
 let composeCount = 5;      // visible option slots
 let optEmoji = {};         // compose: hand-picked emoji per option index
 let paletteFor = null;     // compose: which row's emoji palette is open
+let emojiTouched = new Set(); // rows where you opened the palette this render — never auto-fill over your choice
 
 const MAP_ICON = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>`;
 
@@ -928,6 +959,7 @@ function renderHome() {
   const name = store.get('name', '');
   const history = store.get('history', []);
   paletteFor = null;
+  emojiTouched = new Set();
   const draft = store.get('draft', null); // a half-typed five survives reloads until it's sent
   if (draft) {
     composeCount = Math.min(6, Math.max(composeCount, draft.count || 5));
@@ -938,7 +970,7 @@ function renderHome() {
       <div class="opt-num">${i + 1}</div>
       <button class="emoji-btn${optEmoji[i] ? ' set' : ''}" data-action="emoji-pick" data-i="${i}"
               aria-label="pick an emoji for option ${i + 1}">${optEmoji[i] || '＋'}</button>
-      <input class="text-in opt-in" id="opt${i}" maxlength="64" autocomplete="off"
+      <input class="text-in opt-in" id="opt${i}" maxlength="64" autocomplete="off" list="opt-suggest"
              placeholder="${esc(OPT_PLACEHOLDERS[i % OPT_PLACEHOLDERS.length])}">
     </div>`).join('');
 
@@ -951,6 +983,7 @@ function renderHome() {
     <div class="card">
       <h2>Start a round</h2>
       <div class="field-label">Your five <span style="opacity:.6">(paste a numbered list — it fills itself)</span></div>
+      ${optSuggestList()}
       ${optRows}
       ${composeCount < 6 ? '<button class="add-opt" data-action="add-option">+ a 6th — that’s cheating, but fine</button>' : ''}
       <div class="duo">
@@ -1150,6 +1183,7 @@ async function composeShare() {
   const lower = opts.map((o) => o.toLowerCase());
   if (new Set(lower).size !== lower.length) { err.textContent = 'Two of those are the same — every option should be distinct.'; err.classList.add('show'); return; }
   if (name) store.set('name', name);
+  rememberOpts((i) => $('#opt' + i)?.value); // local-only: learn these names + emoji for next time
 
   const payload = { v: 1, s: 'cut', t: title, l: name, o: opts };
   if (note) payload.n = note; // keep the field out of the URL entirely when unused
@@ -1277,6 +1311,7 @@ app.addEventListener('click', (e) => {
   else if (act === 'emoji-pick') { const i = Number(el.dataset.i); paletteFor === i ? closePalette() : openPalette(i); }
   else if (act === 'emoji-set') {
     const i = Number(el.dataset.i);
+    emojiTouched.add(i);                     // your choice wins — stop auto-filling this row
     if (el.dataset.e) optEmoji[i] = el.dataset.e; else delete optEmoji[i];
     closePalette();
     updateEmojiBtn(i);
@@ -1347,7 +1382,15 @@ function openPalette(i) {
 }
 /* the emoji button live-previews what the cut view will auto-guess */
 app.addEventListener('input', (e) => {
-  if (e.target.classList?.contains('opt-in')) { updateEmojiBtn(Number(e.target.id.slice(3))); saveDraft(); }
+  if (e.target.classList?.contains('opt-in')) {
+    const i = Number(e.target.id.slice(3));
+    if (!optEmoji[i] && !emojiTouched.has(i)) {          // seed your remembered emoji — but never over a choice you're making
+      const remembered = rememberedEmoji(e.target.value);
+      if (remembered) optEmoji[i] = remembered;
+    }
+    updateEmojiBtn(i);
+    saveDraft();
+  }
   else if (e.target.id === 'pal-search') {
     const grid = $('#pal-grid');
     if (grid) grid.innerHTML = palCells(Number(e.target.dataset.i), e.target.value);
