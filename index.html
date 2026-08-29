@@ -26,6 +26,12 @@
     --serif:'Instrument Serif', Georgia, serif;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  /* Keep taps as taps: no text selection or long-press callout on controls,
+     so the artifact viewer's comment affordance never hijacks a button press.
+     The footer stays selectable. */
+  header, .tabs, section.panel, .hint, .paper-wrap{
+    user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+  }
   html{background:var(--bench);}
   body{
     margin:0; background:var(--bench); color:var(--text);
