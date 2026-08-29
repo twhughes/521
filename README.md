@@ -35,6 +35,16 @@ just run          # same, once `just` is installed
 Any static host works — it's one `index.html` with zero dependencies.
 The repo holds only generic app code; round data exists only in the links people text each other.
 
+## Side experiment: Plot & Wash (`plotter.html`)
+
+A self-contained mobile workstation for pen-plotter generative art: four seeded
+line generators (flow field, harmonograph pendulum, occluded ridgelines, rotor
+extrusion) with live parameter sliders, a finger-painted watercolor wash layer
+on top of the "waterproof" ink, PNG save, and an A4-scaled SVG export that
+drops straight into an AxiDraw/NextDraw/iDraw workflow. Zero dependencies, one
+file, same philosophy as the rest of the repo. Smoke-test it headlessly by
+loading `plotter.html#smoke` and reading the `<pre id="out">` results.
+
 ## Lineage
 
 Supersedes `../521_backup/` (Jan 2025): kept its one great idea
