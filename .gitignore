@@ -2,5 +2,6 @@
 FABLE.md
 PLAN.md
 STATUS.md
-.claude/
+.claude/*
+!.claude/settings.json
 .DS_Store
