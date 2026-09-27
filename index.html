@@ -496,63 +496,6 @@ const EMOJI_RULES = [
   [/date ?night/i, '✨'],
 ];
 const EMOJI_FALLBACK = ['🍽️', '✨', '🎲', '🌟', '💫', '🧭', '🎁'];
-/* ---------- named places (a local's hand-picks; first match wins, before the generic rules) ----------
-   These beat the cuisine guesser because a name alone ("Motorino") doesn't say "pizza".
-   Tyler curates this by neighborhood — it's meant to grow. Add a line: [/name/i, '🙂']. */
-const NAMED_PLACES = [
-  // ============ Upper West Side (a local's map — first match wins; add your block) ============
-  // —— pizza (put slice shops before the generic pizza rule) ——
-  [/motorino/i, '🍕'],                          // Neapolitan
-  [/sal (and|&|'?n) ?carmine/i, '🍕'],          // 1959 slice institution (before Carmine's below)
-  [/mama'?s too|koronet|bettolona|numero ?28|v ?& ?t pizzeria/i, '🍕'],
-  // —— Italian ——
-  [/carmine'?s/i, '🍝'],                        // family-style
-  [/gennaro|pappardella|cafe ?fiorello|fiorello|serafina|\bceleste\b|\bfumo\b|osteria ?cotta|machiavelli/i, '🍝'],
-  // —— sushi / Japanese ——
-  [/sushi ?yasaka|sushi ?nonaka|momoya|kouzan|\bkaito\b|sushi ?of ?gari|masa\b/i, '🍣'],
-  // —— ramen / noodles ——
-  [/jin ?ramen|kitakata|ramen ?ban ?nai/i, '🍜'],
-  // —— Chinese / dim sum ——
-  [/red ?farm|han ?dynasty|ollie'?s|jing ?fong/i, '🥟'],
-  // —— Mexican ——
-  [/covacha|rosa ?mexicano|cascabel|noche ?mexicana/i, '🌮'],
-  // —— Thai ——
-  [/\bsala\b|land ?thai/i, '🍛'],
-  // —— Greek / Mediterranean / Middle Eastern ——
-  [/\bkefi\b|\bdagon\b|\bmiriam\b|\btessa\b|bustan|boulud ?sud/i, '🥙'],
-  [/ayat|hinds ?hall/i, '🥙'],                  // Palestinian
-  // —— Afro-Caribbean ——
-  [/tatiana/i, '🍛'],
-  // —— French / bistro / fine dining ——
-  [/jean.?georges/i, '🥂'],
-  [/cafe ?luxembourg|bar ?boulud|nice ?matin/i, '🍷'],
-  // —— seafood ——
-  [/mermaid ?inn|el ?fish|marisqueria|citarella/i, '🦪'],
-  // —— burgers / American / diner ——
-  [/old ?john'?s|5 ?napkin|five ?napkin/i, '🍔'],
-  [/the ?ribbon/i, '🍗'],                       // fried chicken
-  [/good ?enough ?to ?eat/i, '🥞'],             // brunch pancakes
-  [/the ?smith|community food/i, '🍳'],
-  // —— rotisserie / Latin ——
-  [/flor de mayo|malecon|la ?caridad/i, '🍗'],
-  // —— deli / appetizing / bagels ——
-  [/barney ?greengrass/i, '🥯'],               // the Sturgeon King
-  [/absolute ?bagel|zabar'?s|p\.?j\.? ?bernstein/i, '🥯'],
-  // —— Southern / pickles ——
-  [/jacob'?s pickle|maison ?pickle/i, '🥒'],
-  // —— hot dogs ——
-  [/gray'?s papaya/i, '🌭'],
-  // —— vegan / healthy ——
-  [/peacefood|\bblossom\b/i, '🥗'],
-  // —— tapas ——
-  [/boqueria|salumeria ?rosi/i, '🥘'],
-  // —— bakeries / cookies / dessert ——
-  [/levain|insomnia ?cookie/i, '🍪'],
-  [/magnolia ?bakery|buttercup/i, '🧁'],
-  [/cafe ?lalo/i, '🍰'],
-  [/orwashers|silver ?moon|grandaisy|bouchon/i, '🥐'],
-  [/brunch|sarabeth'?s/i, '🍳'],
-];
 /* plain Google Maps search deep link — no API, no key; iOS opens the Maps app */
 const mapsUrl = (name) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(name);
 /* ---------- rendered map with numbered pins (Leaflet + OSM tiles) ----------
@@ -665,7 +608,6 @@ const optName = (opt) => splitEmoji(opt).rest || opt;     // what geocoders / Ma
 function emojiFor(text, i) {
   const lead = splitEmoji(text).e;
   if (lead) return lead;
-  for (const [re, e] of NAMED_PLACES) if (re.test(text)) return e;
   for (const [re, e] of EMOJI_RULES) if (re.test(text)) return e;
   return EMOJI_FALLBACK[i % EMOJI_FALLBACK.length];
 }

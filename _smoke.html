@@ -38,9 +38,9 @@ async function run() {
 
   // --- compose ---
   d.querySelector('#title-in').value = 'Dinner Friday';
-  d.querySelector('#name-in').value = 'Tyler';
+  d.querySelector('#name-in').value = 'Sam';
   d.querySelector('#note-in').value = 'surprise me, somewhere warm';
-  const opts = ['Sushi Yasaka', 'Thai Market', 'Pisticci', 'Shake Shack', 'Taqueria y Fonda'];
+  const opts = ['Sushi bar', 'Thai place', 'Pasta place', 'Burger joint', 'Noodle bar'];
   opts.forEach((o, i) => { d.querySelector('#opt' + i).value = o; });
 
   // --- emoji picker: explicit pick on option 4, option 5 becomes emoji-only ---
@@ -78,12 +78,12 @@ async function run() {
   A('cut renders 5 choices', d.querySelectorAll('.choices .choice').length === 5);
   A('cut has 5 map pins', d.querySelectorAll('.choices .mapbtn').length === 5);
   A('map view deferred (no panel)', !d.querySelector('#geo-panel'));
-  A('cut names the lister', d.body.textContent.includes('Tyler sent five'));
+  A('cut names the lister', d.body.textContent.includes('Sam sent five'));
   A('cut wears the yellow step band (2)', d.querySelector('#app').dataset.stage === '2');
   A('cut shows the lister note', !!d.querySelector('.round-note') && d.querySelector('.round-note').textContent.includes('surprise me, somewhere warm'));
   A('cut emoji matched sushi', d.body.textContent.includes('🍣'));
-  const shakeRow = [...d.querySelectorAll('.choices .choice')].find((c) => c.querySelector('.emoji').textContent === '🌮');
-  A('picked emoji overrides auto, label stays clean', !!shakeRow && shakeRow.querySelector('.label').textContent === 'Shake Shack');
+  const pickedRow = [...d.querySelectorAll('.choices .choice')].find((c) => c.querySelector('.emoji').textContent === '🌮');
+  A('picked emoji overrides auto, label stays clean', !!pickedRow && pickedRow.querySelector('.label').textContent === 'Burger joint');
   A('emoji-only option is a full choice', [...d.querySelectorAll('.choices .choice')].some((c) => c.querySelector('.emoji').textContent === '🦪'));
   A('map buttons use external-link icon', d.querySelectorAll('.choices .mapbtn svg').length === 5);
   A('cut cta starts disabled', d.querySelector('#cta').disabled === true);
@@ -113,7 +113,7 @@ async function run() {
   A('close send waits for a pick', d.querySelector('#cta').disabled === true);
   A('close shows the note passed back', !!d.querySelector('.round-note') && d.querySelector('.round-note').textContent.includes('number 3 was also fine'));
   A('cut three ghosted below, same style', d.querySelectorAll('#ghost-rows .ghost-row').length === 3 &&
-    d.body.textContent.includes('Pisticci'));
+    d.body.textContent.includes('Pasta place'));
   d.querySelectorAll('#final-choices .choice')[0].click();
   await sleep(500);
   A('verdict note appears after a pick', !!d.querySelector('#close-after #close-note'));
@@ -126,7 +126,7 @@ async function run() {
   await sleep(150);
   d.querySelector('#close-note').value = 'it was close';
   const verdict = (await f.contentWindow.prepare()).msg;
-  A('verdict message leads with the winner', verdict.startsWith('🏆 Sushi Yasaka! ') && verdict.includes('#2'));
+  A('verdict message leads with the winner', verdict.startsWith('🏆 Sushi bar! ') && verdict.includes('#2'));
   d.querySelector('[data-action="close-share"]').click();
   await sleep(400);
   const doneUrl = d.querySelector('#close-linkrow #share-url')?.dataset.url || '';
@@ -138,9 +138,9 @@ async function run() {
   await sleep(600);
   d = f.contentDocument;
   A('done shows trophy', !!d.querySelector('.trophy'));
-  A('done shows winner', d.body.textContent.includes('Sushi Yasaka'));
+  A('done shows winner', d.body.textContent.includes('Sushi bar'));
   A('done shows the verdict note', !!d.querySelector('.round-note') && d.querySelector('.round-note').textContent.includes('it was close'));
-  A('done credits the ritual', d.body.textContent.includes('Partner kept Sushi Yasaka'));
+  A('done credits the ritual', d.body.textContent.includes('Partner kept Sushi bar'));
 
   // --- history + broken link ---
   f.contentWindow.location.href = '/index.html#not-a-real-payload';
@@ -151,23 +151,23 @@ async function run() {
   // --- codec: new links are compressed (v2), old v1 links still decode ---
   A('new links are compressed (v2 hash)', [cutUrl, closeUrl, doneUrl].every((u) => u.split('#')[1]?.[0] === '2'));
   log.push(`LEN cut=${cutUrl.length} close=${closeUrl.length} done=${doneUrl.length}`);
-  const legacyJson = JSON.stringify({ v: 1, s: 'cut', t: 'Old thread', l: 'Tyler', o: ['🍕 Motorino', 'Thai Market', 'Kefi'] });
+  const legacyJson = JSON.stringify({ v: 1, s: 'cut', t: 'Old thread', l: 'Sam', o: ['🍕 Slice shop', 'Thai place', 'Falafel stand'] });
   const legacyHash = btoa(unescape(encodeURIComponent(legacyJson))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   f.contentWindow.location.href = '/index.html#' + legacyHash;
   await sleep(400);
   d = f.contentDocument;
-  A('legacy v1 link still decodes', d.querySelectorAll('.choices .choice').length === 3 && d.body.textContent.includes('Motorino'));
+  A('legacy v1 link still decodes', d.querySelectorAll('.choices .choice').length === 3 && d.body.textContent.includes('Slice shop'));
 
   // --- draft deep link (voice prefill): seeds compose, strips hash ---
   const W2 = f.contentWindow;
-  const draftHash = await W2.encodePayload({ v: 1, s: 'draft', t: 'Thursday dinner', o: ['Consulate happy hour', 'Optimist', 'Pecora Bianca'], n: 'from voice' });
+  const draftHash = await W2.encodePayload({ v: 1, s: 'draft', t: 'Thursday dinner', o: ['Happy hour spot', 'Wine bar', 'Trattoria'], n: 'from voice' });
   W2.location.href = '/index.html#' + draftHash;
   await sleep(400);
   d = f.contentDocument;
   A('draft link opens compose', d.querySelectorAll('.opt-in').length >= 5);
   A('draft link strips its hash', f.contentWindow.location.hash === '');
   A('draft seeds title', d.querySelector('#title-in')?.value === 'Thursday dinner');
-  A('draft seeds options', d.querySelector('#opt0')?.value === 'Consulate happy hour' && d.querySelector('#opt2')?.value === 'Pecora Bianca');
+  A('draft seeds options', d.querySelector('#opt0')?.value === 'Happy hour spot' && d.querySelector('#opt2')?.value === 'Trattoria');
   A('draft seeds note', d.querySelector('#note-in')?.value === 'from voice');
   A('draft leaves empty slots empty', (d.querySelector('#opt3')?.value ?? '') === '');
 
@@ -175,8 +175,8 @@ async function run() {
   await sleep(400);
   d = f.contentDocument;
   A('no recent-rounds list on home', !d.body.textContent.includes('Recent rounds'));
-  A('rounds still logged on this phone (first-timer checks)', JSON.parse(f.contentWindow.localStorage.getItem('521.history') || '[]').some((h) => h.winner === 'Sushi Yasaka'));
-  A('draft survives into a fresh load', d.querySelector('#opt1')?.value === 'Optimist');
+  A('rounds still logged on this phone (first-timer checks)', JSON.parse(f.contentWindow.localStorage.getItem('521.history') || '[]').some((h) => h.winner === 'Sushi bar'));
+  A('draft survives into a fresh load', d.querySelector('#opt1')?.value === 'Wine bar');
 
   finish();
 }
