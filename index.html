@@ -98,6 +98,11 @@
     font-size: 36px; line-height: 1.1; font-weight: 850; letter-spacing: -1.1px;
   }
   .title-in:focus { border-bottom-color: var(--band-soft); }
+  .lede { margin-top: 4px; font-size: 15px; font-weight: 600; color: var(--band-soft); }
+  /* compose has room to spare (no list under it): a fuller band that says the ritual, comfier rows */
+  #app[data-view="compose"] .band-in { padding-bottom: 20px; }
+  #app[data-view="compose"] .title-in { font-size: 40px; }
+  #app[data-view="compose"] .opt-row { min-height: 49px; }
   .title-in::placeholder { color: var(--band-ink); opacity: 0.45; }
   /* one row that scrolls sideways, bleeding to the band's edges, instead of wrapping onto a second line */
   .chips { display: flex; gap: 6px; margin: 10px -22px 0; padding: 0 22px; overflow-x: auto; scrollbar-width: none; }
@@ -254,7 +259,7 @@
   .invite b { color: var(--ink); font-weight: 800; }
 
   /* ---------- footer / misc ---------- */
-  .house-rule { margin-top: 16px; padding: 0 12px; text-align: center; font-size: 12.5px; font-weight: 500; line-height: 1.5; color: var(--ink2); }
+  .house-rule { margin-top: 12px; padding: 0 12px; text-align: center; font-size: 12.5px; font-weight: 500; line-height: 1.5; color: var(--ink2); }
   .house-rule b { color: var(--ink); font-weight: 750; }
   details.explain { margin-top: 12px; padding: 0 6px; }
   details.explain summary { list-style: none; cursor: pointer; font-size: 14px; font-weight: 700; color: var(--ink2); }
@@ -959,6 +964,7 @@ function renderHome() {
       <div class="band-row">${steps(5)}</div>
       <input class="title-in" id="title-in" maxlength="48" autocomplete="off" enterkeyhint="next"
              aria-label="what you're deciding" placeholder="What are we deciding?">
+      <p class="lede">List five. They keep two. You pick the winner.</p>
       <div class="chips">
         <button class="chip" data-action="chip-title" data-title="Dinner tonight">🍽️ Dinner</button>
         <button class="chip" data-action="chip-title" data-title="Takeout">🥡 Takeout</button>
