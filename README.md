@@ -25,7 +25,8 @@ just run          # same, once `just` is installed
   Location comes from the browser geolocation prompt (no location → no pins).
 - Each stage renders from the link and produces the next link:
   `home (list 5)` → `#…cut (keep 2)` → `#…close (pick 1)` → `#…done (🏆)`.
-- Share button uses the native iOS share sheet (falls back to clipboard).
+- Every step's main button is **Send in Messages**: one tap opens Messages with the
+  link prefilled (the link is prebuilt as you type). **Copy link** is the fallback.
 - localStorage keeps only your own name, partner name (for the coin flip),
   and the last 12 rounds. Nothing else, nowhere else.
 

@@ -10,325 +10,271 @@
 <!-- deliberately no og:url: iMessage canonicalizes the tappable card to it, which would strip
      the #fragment that carries the whole round. Without it, the pasted URL survives intact. -->
 <!-- deliberately no og:image: with one, iMessage renders a giant hero card; without, a compact link pill -->
-<meta name="theme-color" content="#FFF9F2" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#191410" media="(prefers-color-scheme: dark)">
+<!-- Safari tints its own chrome to match the step band; syncThemeColor() keeps this current -->
+<meta name="theme-color" content="#2446F0">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="521">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%23E2593A'/%3E%3Ctext x='50' y='66' font-family='-apple-system,Helvetica,sans-serif' font-size='40' font-weight='800' fill='white' text-anchor='middle'%3E521%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3CclipPath id='r'%3E%3Crect width='100' height='100' rx='24'/%3E%3C/clipPath%3E%3Cg clip-path='url(%23r)'%3E%3Crect width='34' height='100' fill='%232446F0'/%3E%3Crect x='33' width='34' height='100' fill='%23FFC21F'/%3E%3Crect x='66' width='34' height='100' fill='%23D63B1F'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preload" href="vendor/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="vendor/leaflet.css">
 <style>
+  /* Archivo (SIL OFL 1.1, vendor/fonts/OFL.txt) is vendored, so the page still asks no third party for anything */
+  @font-face {
+    font-family: 'Archivo'; font-style: normal; font-weight: 100 900; font-stretch: 62% 125%; font-display: swap;
+    src: url(vendor/fonts/archivo-latin.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: 'Archivo'; font-style: normal; font-weight: 100 900; font-stretch: 62% 125%; font-display: swap;
+    src: url(vendor/fonts/archivo-latin-ext.woff2) format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
   :root {
-    --bg0: #FFF9F2;
-    --bg1: #FFEEDC;
-    --card: #FFFFFF;
-    --card2: #FFF4E8;
-    --ink: #231A12;
-    --ink2: #8A7A6A;
-    --hairline: rgba(35, 26, 18, 0.12);
-    --accent: #E2593A;
-    --accent2: #F2A03D;
-    --accent-soft: rgba(226, 89, 58, 0.12);
-    --good: #3E8E5A;
-    --shadow: 0 10px 30px rgba(120, 72, 30, 0.12), 0 2px 8px rgba(120, 72, 30, 0.08);
-    --shadow-pick: 0 14px 34px rgba(226, 89, 58, 0.25), 0 3px 10px rgba(226, 89, 58, 0.15);
-    --radius: 22px;
+    /* the three step colors: 5 = you list, 2 = they keep, 1 = you pick (and the winner) */
+    --blue: #2446F0; --yellow: #FFC21F; --red: #D63B1F;
+    --page: #F2F2F4; --card: #FFFFFF; --well: #F2F2F4;
+    --ink: #111111; --ink2: #6B6B72; --said: #3A3A40; --err: #C8321A;
+    --sep: rgba(0, 0, 0, 0.08); --off: #C9C9CE; --av: #E6E6EA;
+    --t1: #FFE9D6; --t2: #FFE1E6; --t3: #E2F4DA; --t4: #FFF0CC; --t5: #FBE4DC;
+    --bar: rgba(242, 242, 244, 0.92); --bar-line: rgba(0, 0, 0, 0.1);
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg0: #191410;
-      --bg1: #241B12;
-      --card: #2A2119;
-      --card2: #332818;
-      --ink: #F5EDE4;
-      --ink2: #B5A492;
-      --hairline: rgba(245, 237, 228, 0.14);
-      --accent: #FF7A52;
-      --accent2: #F2A03D;
-      --accent-soft: rgba(255, 122, 82, 0.16);
-      --good: #62B784;
-      --shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.3);
-      --shadow-pick: 0 14px 34px rgba(255, 122, 82, 0.28), 0 3px 10px rgba(0, 0, 0, 0.3);
+      --page: #000000; --card: #1C1C1E; --well: #111113;
+      --ink: #F2F2F7; --ink2: #98989F; --said: #C9C9CF; --err: #FF7A5E;
+      --sep: rgba(255, 255, 255, 0.1); --off: #4A4A4E; --av: #3A3A3C;
+      --t1: #3B2A1F; --t2: #3D2329; --t3: #22331E; --t4: #3A321C; --t5: #3A2620;
+      --bar: rgba(0, 0, 0, 0.86); --bar-line: rgba(255, 255, 255, 0.12);
     }
   }
+  /* the band's color is the step. By day the band wears it; at night the band dims and the giant number glows. */
+  #app[data-stage="5"] { --st: var(--blue);   --st-ink: #FFFFFF; --st-soft: #D3DBFF;          --st-num: #1D38C0; --st-dim: #0D1850; --st-chip: rgba(255, 255, 255, 0.16); }
+  #app[data-stage="2"] { --st: var(--yellow); --st-ink: #000000; --st-soft: rgba(0, 0, 0, 0.7); --st-num: #CC9B19; --st-dim: #2E2300; --st-chip: rgba(0, 0, 0, 0.1); }
+  #app[data-stage="1"] { --st: var(--red);    --st-ink: #FFFFFF; --st-soft: #FFFFFF;          --st-num: #AB2F19; --st-dim: #3A0F07; --st-chip: rgba(255, 255, 255, 0.16); }
+  #app { --band: var(--st); --band-ink: var(--st-ink); --band-soft: var(--st-soft); --num: var(--st-num); --chip: var(--st-chip); }
+  @media (prefers-color-scheme: dark) {
+    #app { --band: var(--st-dim); --band-ink: #FFFFFF; --band-soft: rgba(255, 255, 255, 0.72); --num: var(--st); --chip: rgba(255, 255, 255, 0.14); }
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html { -webkit-text-size-adjust: 100%; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
-    background: radial-gradient(1200px 600px at 50% -10%, var(--bg1), transparent 70%), var(--bg0);
-    color: var(--ink);
-    min-height: 100vh;
-    min-height: 100dvh;
+    font-family: 'Archivo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--page); color: var(--ink); -webkit-font-smoothing: antialiased;
+    min-height: 100vh; min-height: 100dvh;
   }
-  #app {
-    max-width: 440px;
-    margin: 0 auto;
-    padding: max(8px, env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom));
-  }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-  /* ---------- brand / hero ---------- */
-  .hero { text-align: center; padding: 8px 0 2px; }
-  .brand {
-    font-size: 32px; font-weight: 800; letter-spacing: -0.5px; line-height: 1;
-    font-variant-numeric: tabular-nums;
+  /* ---------- the step band ---------- */
+  .band { position: relative; overflow: hidden; background: var(--band); color: var(--band-ink); border-radius: 0 0 28px 28px; }
+  .band-in { position: relative; max-width: 440px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 16px) 22px 24px; }
+  .giant {
+    position: absolute; right: -20px; top: calc(env(safe-area-inset-top) - 34px);
+    font-size: 330px; line-height: 0.8; font-weight: 900; font-stretch: 62%; letter-spacing: -6px;
+    color: var(--num); pointer-events: none; user-select: none; -webkit-user-select: none;
   }
-  .brand .dot { color: var(--accent); font-weight: 700; margin: 0 1px; }
-  .tagline { margin-top: 3px; font-size: 12px; color: var(--ink2); font-weight: 500; }
-
-  /* ---------- stepper ---------- */
-  .stepper { display: flex; align-items: center; justify-content: center; gap: 0; padding: 8px 0 2px; }
-  .step-cap { display: block; text-align: center; margin-top: 3px; font-size: 11px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent); }
-  .step {
-    width: 27px; height: 27px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 12.5px; font-variant-numeric: tabular-nums;
-    border: 1.5px solid var(--hairline); color: var(--ink2); background: transparent;
-    position: relative;
+  .band .z { position: relative; }
+  .band-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 30px; }
+  .steps { display: flex; gap: 8px; font-size: 22px; font-weight: 900; font-stretch: 62%; line-height: 1; }
+  .steps span { opacity: 0.35; }
+  .steps .on { opacity: 1; }
+  .pill {
+    display: inline-block; max-width: 62%; height: 30px; line-height: 30px; padding: 0 12px; border-radius: 15px;
+    background: var(--chip); font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .step.past { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
-  .step.now { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 0 0 4px var(--accent-soft); }
-  .step-line { width: 20px; height: 1.5px; background: var(--hairline); }
-  .step-line.past { background: var(--accent); opacity: 0.5; }
-
-  /* ---------- cards ---------- */
-  .card {
-    background: var(--card); border-radius: 16px; box-shadow: var(--shadow);
-    padding: 12px 14px; margin-top: 10px;
+  .kicker { margin-top: 16px; font-size: 16px; font-weight: 700; color: var(--band-soft); overflow-wrap: anywhere; }
+  .band h1 { margin-top: 4px; font-size: 34px; line-height: 1.02; font-weight: 850; letter-spacing: -1px; }
+  .title-in {
+    display: block; width: 100%; margin-top: 12px; padding: 0 0 2px; border: 0; border-bottom: 2px solid transparent; border-radius: 0;
+    outline: 0; background: transparent; color: var(--band-ink); caret-color: currentColor;
+    font-size: 40px; line-height: 1.1; font-weight: 850; letter-spacing: -1.2px;
   }
-  .card h2 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink2); margin-bottom: 8px; }
-  .lede { font-size: 18px; font-weight: 800; line-height: 1.2; letter-spacing: -0.2px; }
-  .sub { margin-top: 3px; font-size: 13.5px; color: var(--ink2); line-height: 1.4; }
-  .title-chip {
-    display: inline-flex; align-items: center; gap: 5px; margin-top: 7px;
-    background: var(--accent-soft); color: var(--accent);
-    font-size: 12.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px;
-  }
-
-  /* ---------- compose ---------- */
-  .field-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink2); margin: 10px 0 2px; }
-  .field-label:first-child { margin-top: 0; }
-  input.text-in {
-    width: 100%; min-width: 0; border: none; outline: none; background: transparent;
-    font: inherit; font-size: 16px; font-weight: 600; color: var(--ink);
-    padding: 5px 0; border-bottom: 1.5px solid var(--hairline);
-    border-radius: 0; caret-color: var(--accent);
-  }
-  input.text-in:focus { border-bottom-color: var(--accent); }
-  input.text-in::placeholder { color: var(--ink2); opacity: 0.55; font-weight: 500; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .title-in:focus { border-bottom-color: var(--band-soft); }
+  .title-in::placeholder { color: var(--band-ink); opacity: 0.45; }
+  /* one row that scrolls sideways, bleeding to the band's edges, instead of wrapping onto a second line */
+  .chips { display: flex; gap: 6px; margin: 12px -22px 0; padding: 0 22px; overflow-x: auto; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
   .chip {
-    border: none; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
-    background: var(--card2); color: var(--ink); padding: 5px 10px; border-radius: 999px;
-    transition: transform 0.15s ease;
+    display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border: 0; border-radius: 15px;
+    flex: none; background: var(--chip); color: var(--band-ink); font-size: 13.5px; font-weight: 700; white-space: nowrap; transition: transform 0.15s ease;
   }
   .chip:active { transform: scale(0.94); }
-  .opt-row { display: flex; align-items: center; gap: 8px; }
-  .opt-num {
-    width: 20px; height: 20px; border-radius: 50%; flex: none;
-    background: var(--card2); color: var(--ink2);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums;
+  .chip.maps { margin-top: 14px; height: 34px; padding: 0 14px; border-radius: 17px; font-size: 15px; }
+  .winner-name { margin-top: 8px; font-size: 64px; line-height: 0.88; font-weight: 900; font-stretch: 66%; letter-spacing: -1px; overflow-wrap: anywhere; }
+  .winner-name.long { font-size: 50px; }
+  .winner-name.xlong { font-size: 38px; }
+
+  /* ---------- the calm body: cards of cells ---------- */
+  .body { max-width: 440px; margin: 0 auto; padding: 0 16px calc(150px + env(safe-area-inset-bottom)); }
+  .hdr { padding: 18px 6px 7px; font-size: 13.5px; font-weight: 600; color: var(--ink2); }
+  .ftr { padding: 8px 6px 0; font-size: 13.5px; font-weight: 500; line-height: 1.4; color: var(--ink2); }
+  .ftr .full { color: var(--ink); font-weight: 700; }
+  .card { background: var(--card); border-radius: 16px; overflow: hidden; }
+  .gap { margin-top: 14px; }
+  .cell { position: relative; display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 0 14px; }
+  .cell + .cell::before { content: ""; position: absolute; top: 0; right: 0; left: 60px; height: 1px; background: var(--sep); }
+  .cell.plain + .cell.plain::before { left: 14px; }
+  .tile {
+    flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+    font-size: 19px; line-height: 1; background: var(--t1); border: 0; padding: 0;
   }
-  .emoji-btn {
-    width: 30px; height: 30px; border-radius: 9px; flex: none;
-    display: flex; align-items: center; justify-content: center;
-    background: var(--card2); border: none; cursor: pointer;
-    font: inherit; font-size: 16px; color: var(--ink2);
-    transition: transform 0.15s ease, background 0.15s ease;
+  .t1 { background: var(--t1); } .t2 { background: var(--t2); } .t3 { background: var(--t3); } .t4 { background: var(--t4); } .t5 { background: var(--t5); }
+  .cell .l { flex: none; width: 50px; align-self: flex-start; padding-top: 16px; font-size: 16px; font-weight: 500; color: var(--ink2); }
+  .field {
+    flex: 1; min-width: 0; padding: 15px 0; border: 0; border-radius: 0; outline: 0; background: transparent;
+    font-size: 16px; font-weight: 500; line-height: 1.4; color: var(--ink);
   }
+  textarea.field { display: block; resize: none; }
+  .field::placeholder, .opt-in::placeholder { color: var(--ink2); opacity: 0.7; font-weight: 500; }
+
+  /* ---------- compose ---------- */
+  .emoji-btn { transition: transform 0.15s ease, opacity 0.15s ease; }
   .emoji-btn:active { transform: scale(0.9); }
-  .emoji-btn.auto { opacity: 0.45; }
-  .emoji-btn.set { background: var(--accent-soft); }
+  .emoji-btn.auto { opacity: 0.5; }
+  .emoji-btn.empty { color: var(--ink2); font-size: 18px; }
+  .opt-in {
+    flex: 1; min-width: 0; padding: 16px 0; border: 0; border-radius: 0; outline: 0; background: transparent;
+    font-size: 18px; font-weight: 600; letter-spacing: -0.2px; color: var(--ink);
+  }
+  .add-opt { display: block; padding: 8px 6px 0; border: 0; background: none; font-size: 13.5px; font-weight: 600; color: var(--ink2); }
   .emoji-palette {
-    background: var(--card2); border-radius: 12px; padding: 6px;
-    margin: 6px 0 4px 28px;
+    padding: 10px 12px 12px; background: var(--well); border-top: 1px solid var(--sep); border-bottom: 1px solid var(--sep);
     animation: rise 0.25s cubic-bezier(0.22, 1, 0.36, 1) backwards;
   }
-  .pal-search {
-    width: 100%; box-sizing: border-box; border: none; border-radius: 8px;
-    padding: 6px 9px; margin-bottom: 6px; font: inherit; font-size: 13px;
-    background: var(--card); color: var(--ink);
-  }
-  .pal-search:focus { outline: 2px solid var(--accent-soft); }
-  .pal-grid {
-    display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px;
-    max-height: 176px; overflow-y: auto;
-  }
-  .pal-cell {
-    background: none; border: none; font: inherit; font-size: 18px;
-    padding: 4px 0; cursor: pointer; border-radius: 8px; line-height: 1.3;
-  }
-  .pal-cell:active { background: var(--accent-soft); transform: scale(0.9); }
-  .pal-auto { font-size: 9.5px; font-weight: 700; color: var(--ink2); text-transform: uppercase; letter-spacing: 0.04em; }
-  .pal-empty { grid-column: 1 / -1; text-align: center; font-size: 12px; color: var(--ink2); padding: 12px 4px; }
-  .add-opt {
-    margin-top: 8px; background: none; border: none; font: inherit; cursor: pointer;
-    font-size: 11.5px; font-weight: 600; color: var(--ink2); opacity: 0.65; padding: 2px 0;
-  }
-  .duo { display: flex; gap: 12px; margin-top: 8px; }
-  .duo > div { flex: 1; min-width: 0; }
-  .form-error { margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--accent); display: none; }
+  .pal-search { width: 100%; margin-bottom: 8px; padding: 9px 12px; border: 0; border-radius: 10px; outline: 0; background: var(--card); color: var(--ink); font-size: 16px; }
+  .pal-search:focus { box-shadow: 0 0 0 2px var(--st); }
+  .pal-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; max-height: 184px; overflow-y: auto; }
+  .pal-cell { padding: 5px 0; border: 0; border-radius: 8px; background: none; font-size: 22px; line-height: 1.25; }
+  .pal-cell:active { background: var(--card); transform: scale(0.9); }
+  .pal-auto { font-size: 11px; font-weight: 700; color: var(--ink2); }
+  .pal-empty { grid-column: 1 / -1; padding: 14px 4px; text-align: center; font-size: 13px; color: var(--ink2); }
+  .form-error { display: none; padding: 10px 6px 0; font-size: 14px; font-weight: 650; color: var(--err); }
   .form-error.show { display: block; }
-  textarea.note-in {
-    width: 100%; box-sizing: border-box; border: 1.5px solid var(--hairline); outline: none;
-    background: var(--card2); font: inherit; font-size: 15px; font-weight: 550; color: var(--ink);
-    padding: 8px 10px; border-radius: 10px; resize: none; caret-color: var(--accent);
-    line-height: 1.4; margin-top: 2px; text-align: left;
-  }
-  textarea.note-in:focus { border-color: var(--accent); }
-  textarea.note-in::placeholder { color: var(--ink2); opacity: 0.55; font-weight: 500; }
 
-  /* ---------- round note (lister's optional message, rides the link) ---------- */
-  .round-note {
-    margin-top: 9px; font-size: 13.5px; line-height: 1.45; color: var(--ink);
-    background: var(--card2); border-left: 3px solid var(--accent);
-    border-radius: 10px; padding: 8px 12px; text-align: left;
-    overflow-wrap: anywhere; white-space: pre-wrap;
+  /* ---------- notes: a small bubble with the sender's initial ---------- */
+  .bubble {
+    display: flex; align-items: flex-start; gap: 10px; width: fit-content; max-width: 100%; margin-top: 16px;
+    padding: 9px 14px 9px 9px; border-radius: 18px; background: var(--card);
+    font-size: 16.5px; font-weight: 550; line-height: 1.35;
   }
-  .round-note .note-label {
-    display: block; font-size: 10px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.07em; color: var(--ink2); margin-bottom: 3px;
-  }
+  .bubble .said { padding-top: 4px; overflow-wrap: anywhere; white-space: pre-wrap; }
+  .av { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--av); display: grid; place-items: center; font-size: 13px; font-weight: 800; }
+  .hint { margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: var(--card); font-size: 14px; font-weight: 550; line-height: 1.4; color: var(--ink2); }
 
-  /* ---------- choice cards ---------- */
-  .choices { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
-  .choice-row { display: flex; align-items: stretch; gap: 6px; }
-  .choice-row .choice { flex: 1; min-width: 0; }
-  .mapbtn {
-    flex: none; width: 36px; display: flex; align-items: center; justify-content: center;
-    background: var(--card); border: none; border-radius: 12px; box-shadow: var(--shadow);
-    cursor: pointer; font: inherit; color: var(--ink2);
-  }
-  .dimmed-row { opacity: 0.35; }
-  .strikebtn {
-    flex: none; width: 32px; display: flex; align-items: center; justify-content: center;
-    background: var(--card); border: none; border-radius: 12px; box-shadow: var(--shadow);
-    cursor: pointer; font: inherit; font-size: 14px; font-weight: 700; color: var(--ink2);
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-  .choice-row.struck .choice { opacity: 0.42; }
-  .choice-row.struck .choice .label { text-decoration: line-through; text-decoration-thickness: 2px; }
-  .choice-row.struck .strikebtn { background: var(--accent-soft); color: var(--accent); }
+  /* ---------- choices: keep 2, pick 1 ---------- */
+  .choice-row { gap: 2px; padding-right: 12px; }
   .choice {
-    display: flex; align-items: center; gap: 10px; text-align: left;
-    background: var(--card); border: 2px solid transparent; border-radius: 14px;
-    box-shadow: var(--shadow); padding: 8px 11px; cursor: pointer;
-    font: inherit; color: var(--ink); width: 100%;
-    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.15s ease, box-shadow 0.25s ease, opacity 0.3s ease;
+    flex: 1; min-width: 0; min-height: 54px; display: flex; align-items: center; gap: 12px; padding: 0;
+    border: 0; background: none; text-align: left; color: var(--ink);
+    font-size: 18px; font-weight: 600; letter-spacing: -0.2px; transition: opacity 0.2s ease;
     animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
   }
-  .choice:active { transform: scale(0.975); }
-  .choice .emoji {
-    width: 34px; height: 34px; border-radius: 10px; flex: none; background: var(--card2);
-    display: flex; align-items: center; justify-content: center; font-size: 19px;
+  .choice .label { flex: 1; min-width: 0; padding: 8px 0; line-height: 1.25; overflow-wrap: anywhere; }
+  .cell.big .choice { min-height: 66px; font-size: 21px; font-weight: 700; }
+  .ic {
+    flex: none; width: 34px; height: 44px; display: grid; place-items: center; padding: 0;
+    border: 0; background: none; color: var(--ink2); opacity: 0.55; transition: opacity 0.15s ease, color 0.15s ease;
   }
-  .choice .label { flex: 1; font-size: 15.5px; font-weight: 650; line-height: 1.25; overflow-wrap: anywhere; }
-  .choice .badge {
-    flex: none; font-size: 10px; font-weight: 800; letter-spacing: 0.06em;
-    background: var(--accent); color: #fff; border-radius: 999px; padding: 3px 8px;
-    opacity: 0; transform: scale(0.6); transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  .chk {
+    flex: none; width: 26px; height: 26px; margin-left: 6px; padding: 0; display: grid; place-items: center;
+    border: 1.8px solid var(--off); border-radius: 50%; background: none;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-  .choice.kept { border-color: var(--accent); transform: translateY(-1px); box-shadow: var(--shadow-pick); }
-  .choice.kept .badge { opacity: 1; transform: scale(1); }
-  .choice.dimmed { opacity: 0.38; }
-  .choice.winner { border-color: var(--accent); box-shadow: var(--shadow-pick); }
-  @keyframes rise { from { opacity: 0; transform: translateY(16px); } }
+  .chk::after {
+    content: ""; width: 11px; height: 6px; opacity: 0; transform: rotate(-45deg) translate(1px, -1px);
+    border-left: 2.6px solid var(--st-ink); border-bottom: 2.6px solid var(--st-ink);
+  }
+  .choice-row.kept .chk, .choice-row.picked .chk { background: var(--st); border-color: var(--st); transform: scale(1.08); }
+  .choice-row.kept .chk::after, .choice-row.picked .chk::after { opacity: 1; }
+  .choice-row.struck .label { color: var(--ink2); text-decoration: line-through; text-decoration-thickness: 2px; }
+  .choice-row.struck .emoji { opacity: 0.35; }
+  .choice-row.struck .strikebtn { opacity: 1; color: var(--ink); }
+  .choice-row.dimmed-row .choice, .choice-row.dimmed-row .chk { opacity: 0.4; }
+  .out { padding: 10px 6px 0; font-size: 14px; font-weight: 500; line-height: 1.4; color: var(--ink2); }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
 
-  .keep-counter { margin-top: 8px; text-align: center; font-size: 12.5px; font-weight: 700; color: var(--ink2); }
-  .keep-counter .full { color: var(--good); }
-
-  /* ---------- CTA + buttons ---------- */
-  .cta {
-    display: flex; align-items: center; justify-content: center; width: 100%;
-    margin-top: 10px; padding: 12px; border: none; border-radius: 13px; cursor: pointer;
-    font: inherit; font-size: 15.5px; font-weight: 750; color: #fff;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    box-shadow: 0 6px 16px rgba(226, 89, 58, 0.3);
+  /* ---------- the one next action, pinned to the thumb ---------- */
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    background: var(--bar); border-top: 1px solid var(--bar-line);
+    -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+  }
+  .bar-in { max-width: 440px; margin: 0 auto; padding: 12px 16px calc(8px + env(safe-area-inset-bottom)); }
+  .btn {
+    display: flex; align-items: center; justify-content: center; width: 100%; height: 54px; border: 0; border-radius: 14px;
+    background: var(--st); color: var(--st-ink); font-size: 18px; font-weight: 800; letter-spacing: -0.2px;
     transition: transform 0.15s ease, opacity 0.2s ease;
   }
-  .cta:active { transform: scale(0.975); }
-  .cta:disabled { opacity: 0.35; box-shadow: none; cursor: default; }
-  .cta.secondary { background: var(--card2); color: var(--ink); box-shadow: none; }
-  .cta.msg { margin-top: 8px; background: linear-gradient(135deg, #34C759, #30B0C7); box-shadow: 0 6px 16px rgba(52, 199, 89, 0.28); }
-  .cta.msg[hidden] { display: none; }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.35; cursor: default; transform: none; }
+  .alt { display: flex; align-items: center; justify-content: center; width: 100%; height: 44px; margin-top: 2px; border: 0; background: none; color: var(--ink); font-size: 16px; font-weight: 650; }
+  .alt:disabled { opacity: 0.35; cursor: default; }
   .linkrow {
-    display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 8px;
-    background: var(--card2); border: none; border-radius: 10px; padding: 8px 10px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px;
-    color: var(--ink2); cursor: pointer; text-align: left;
+    display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 14px; padding: 12px 14px; border: 0; border-radius: 14px;
+    background: var(--card); color: var(--ink2); font-size: 13px; font-weight: 500; text-align: left;
   }
-  .linkrow .trunc { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .hint {
-    margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--ink2);
-    background: var(--card2); border-radius: 10px; padding: 7px 10px; line-height: 1.4;
-  }
+  .linkrow .trunc { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  /* ---------- rendered map ---------- */
-  .geo-card { padding: 5px; }
-  #geo-map { width: 100%; height: 205px; border-radius: 12px; background: var(--card2); overflow: hidden; z-index: 0; }
+  /* ---------- rendered map (deferred: MAP_VIEW = false) ---------- */
+  .geo-card { margin-top: 14px; padding: 5px; }
+  #geo-map { width: 100%; height: 205px; border-radius: 12px; background: var(--well); overflow: hidden; z-index: 0; }
   .geo-off #geo-map { display: none; }
-  .geo-foot {
-    display: flex; justify-content: space-between; align-items: center; gap: 8px;
-    padding: 4px 7px 1px; font-size: 10.5px; font-weight: 600; color: var(--ink2);
-  }
+  .geo-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 7px 1px; font-size: 11px; font-weight: 600; color: var(--ink2); }
   .pin-num {
-    width: 24px; height: 24px; border-radius: 50%;
-    background: var(--accent); color: #fff; border: 2px solid #fff;
-    display: flex; align-items: center; justify-content: center;
-    font-family: -apple-system, sans-serif; font-size: 12px; font-weight: 800;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    width: 24px; height: 24px; border-radius: 50%; background: var(--st); color: var(--st-ink); border: 2px solid #FFFFFF;
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
   }
-  .ghost-row { opacity: 0.28; pointer-events: none; }
-  .ghost-row .choice { cursor: default; }
 
   /* ---------- history ---------- */
-  .hist-list { max-height: 216px; overflow-y: auto; -webkit-overflow-scrolling: touch; margin: 0 -2px; }
-  .hist-row {
-    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
-    background: none; border: none; font: inherit; color: var(--ink); cursor: pointer;
-    padding: 6px 2px; border-bottom: 1px solid var(--hairline);
-  }
-  .hist-row:last-child { border-bottom: none; }
-  .hist-emoji { font-size: 16px; flex: none; }
-  .hist-main { flex: 1; min-width: 0; }
-  .hist-title { font-size: 14px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .hist-state { font-size: 11.5px; color: var(--ink2); font-weight: 500; margin-top: 1px; }
-  .hist-date { font-size: 11px; color: var(--ink2); flex: none; }
+  .hist-list { max-height: 216px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .hist-row { width: 100%; border: 0; background: none; text-align: left; color: var(--ink); }
+  .hist-main { flex: 1; min-width: 0; padding: 9px 0; }
+  .hist-title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; font-weight: 650; }
+  .hist-state { display: block; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500; color: var(--ink2); }
+  .hist-date { flex: none; font-size: 13px; color: var(--ink2); }
 
-  /* ---------- winner / done ---------- */
-  .winner-stage { text-align: center; padding: 4px 0 2px; }
-  .trophy { font-size: 42px; animation: pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; }
-  .winner-name { font-size: 23px; font-weight: 800; letter-spacing: -0.4px; margin-top: 6px; overflow-wrap: anywhere; }
-  .winner-sub { margin-top: 4px; font-size: 13.5px; color: var(--ink2); font-weight: 550; }
-  .ritual-note { margin-top: 10px; font-size: 11.5px; color: var(--ink2); }
-  .first-invite { margin-top: 12px; font-size: 12.5px; color: var(--ink2); line-height: 1.45; }
-  .first-invite b { color: var(--accent); font-weight: 750; font-variant-numeric: tabular-nums; }
-  @keyframes pop { from { opacity: 0; transform: scale(0.3); } }
+  /* ---------- winner ---------- */
+  .ntile { flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-size: 25px; font-weight: 900; font-stretch: 62%; }
+  .n5 { background: var(--blue); color: #FFFFFF; } .n2 { background: var(--yellow); color: #000000; } .n1 { background: var(--red); color: #FFFFFF; }
+  .step-text { flex: 1; min-width: 0; padding: 12px 0; font-size: 16px; font-weight: 500; line-height: 1.35; }
+  .step-text b { font-weight: 800; }
+  .step-text small { display: block; margin-top: 2px; font-size: 13.5px; color: var(--ink2); }
+  .note-row .who { flex: none; width: 56px; align-self: flex-start; padding: 13px 0; font-size: 15px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; }
+  .note-row .said { flex: 1; min-width: 0; padding: 13px 0; font-size: 15.5px; font-weight: 500; line-height: 1.4; color: var(--said); overflow-wrap: anywhere; white-space: pre-wrap; }
+  .invite { margin-top: 16px; padding: 14px 16px; font-size: 15px; line-height: 1.45; color: var(--ink2); }
+  .invite b { color: var(--ink); font-weight: 800; }
 
   /* ---------- footer / misc ---------- */
-  .house-rule {
-    margin-top: 10px; text-align: center; font-size: 11.5px; color: var(--ink2);
-    font-weight: 550; line-height: 1.45; padding: 0 12px;
-  }
-  .house-rule b { color: var(--accent); font-weight: 750; }
-  details.explain { margin-top: 10px; }
-  details.explain summary {
-    font-size: 12px; font-weight: 700; color: var(--ink2); cursor: pointer; list-style: none;
-  }
+  .house-rule { margin-top: 26px; padding: 0 12px; text-align: center; font-size: 13px; font-weight: 500; line-height: 1.5; color: var(--ink2); }
+  .house-rule b { color: var(--ink); font-weight: 750; }
+  details.explain { margin-top: 18px; padding: 0 6px; }
+  details.explain summary { list-style: none; cursor: pointer; font-size: 14px; font-weight: 700; color: var(--ink2); }
+  details.explain summary::-webkit-details-marker { display: none; }
   details.explain summary::before { content: "ⓘ "; }
-  details.explain p { margin-top: 5px; font-size: 12.5px; color: var(--ink2); line-height: 1.5; }
+  details.explain p { margin-top: 6px; font-size: 14px; line-height: 1.5; color: var(--ink2); }
   .toast {
-    position: fixed; left: 50%; bottom: calc(28px + env(safe-area-inset-bottom));
-    transform: translateX(-50%) translateY(8px); z-index: 60;
-    background: var(--ink); color: var(--bg0); font-size: 14px; font-weight: 700;
-    padding: 11px 18px; border-radius: 999px; opacity: 0; pointer-events: none;
-    transition: opacity 0.25s ease, transform 0.25s ease;
+    position: fixed; left: 50%; bottom: calc(130px + env(safe-area-inset-bottom)); z-index: 60;
+    transform: translateX(-50%) translateY(8px); padding: 11px 18px; border-radius: 999px; white-space: nowrap;
+    background: var(--ink); color: var(--page); font-size: 14px; font-weight: 700;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s ease, transform 0.25s ease;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
-  .home-link { display: block; text-align: center; margin-top: 20px; font-size: 14px; font-weight: 700; color: var(--accent); text-decoration: none; }
 
+  /* a mouse needs less room than a thumb: tighter rows so a laptop screen fits a whole step */
+  @media (pointer: fine) {
+    .cell { min-height: 46px; }
+    .opt-in { padding: 12px 0; }
+    .field { padding: 11px 0; }
+    .cell .l { padding-top: 12px; }
+    .choice { min-height: 46px; }
+    .cell.big .choice { min-height: 56px; }
+  }
   @media (prefers-reduced-motion: reduce) {
     * { animation: none !important; transition: none !important; }
   }
@@ -798,32 +744,54 @@ function toast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
 }
-function stepper(now) { // now: 5, 2, 1, or 0 (done)
-  const states = { 5: 0, 2: 1, 1: 2, 0: 3 };
-  const pos = states[now];
-  const cls = (i) => (i < pos ? 'past' : i === pos ? 'now' : '');
-  const cap = { 2: 'pick 2 of 5', 1: 'pick 1 of 2' }[now] || '';
-  return `<div class="stepper">
-    <div class="step ${cls(0)}">5</div><div class="step-line ${pos > 0 ? 'past' : ''}"></div>
-    <div class="step ${cls(1)}">2</div><div class="step-line ${pos > 1 ? 'past' : ''}"></div>
-    <div class="step ${cls(2)}">1</div>
-  </div>${cap ? `<span class="step-cap">${cap}</span>` : ''}`;
+const COUNT_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'];
+const countWord = (n) => COUNT_WORDS[n] || String(n);
+const initial = (name) => esc((Array.from(String(name || '').trim())[0] || '✎').toUpperCase());
+
+/* ---------- the step band ----------
+   Every screen opens on a band whose color IS the step — blue while you list 5,
+   yellow while they keep 2, red while you pick 1 and for the winner — with the
+   step's number set huge behind the headline. Everything under it stays calm. */
+function setStage(stage, view) {
+  app.dataset.stage = String(stage);
+  app.dataset.view = view;
+  requestAnimationFrame(syncThemeColor);
 }
-const houseRule = `<p class="house-rule">House rule — <b>say what you actually want.</b><br>It works out in the end.</p>`;
+function syncThemeColor() { // Safari tints its own chrome to match the band
+  const b = $('.band');
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (b && meta) meta.content = getComputedStyle(b).backgroundColor;
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', syncThemeColor);
+function steps(now) { // now: 5, 2 or 1 lights that step; 0 = decided, all lit
+  return `<div class="steps brand" aria-hidden="true">${[5, 2, 1].map((n) =>
+    `<span class="${now === 0 || n === now ? 'on' : ''}">${n}</span>`).join('')}</div>`;
+}
+const band = (giant, inner) => `
+  <header class="band"><div class="band-in">
+    <div class="giant" aria-hidden="true">${giant}</div>
+    <div class="z">${inner}</div>
+  </div></header>`;
+const bar = (inner) => `<div class="bar"><div class="bar-in">${inner}</div></div>`;
+const titlePill = (t) => t ? `<span class="pill">${emojiFor(t, 0)} ${esc(t)}</span>` : '';
+const houseRule = `<p class="house-rule">House rule: <b>say what you actually want.</b><br>It works out in the end.</p>`;
 /* notes pass back and forth: each handoff can carry one from the sender, shown to the
    opener of the link. n = lister's (compose), kn = cutter's (cut), wn = lister's (verdict).
    They all stay in the payload for the round's whole life; each screen shows the incoming one. */
 const noteBlock = (who, text) => text
-  ? `<div class="round-note"><span class="note-label">${who ? esc(who) + '’s note' : 'Note'}</span>${esc(text)}</div>`
+  ? `<div class="bubble round-note"><span class="av" aria-hidden="true">${initial(who)}</span><span class="said"><span class="sr">${who ? esc(who) + '’s note: ' : 'Note: '}</span>${esc(text)}</span></div>`
   : '';
 
-/* ---------- share: copy-first ----------
-   Safari revokes clipboard permission the moment the click task hits an
-   await, so copyText takes a PROMISE of the text and hands it to the
-   clipboard synchronously (ClipboardItem) — the one WebKit-blessed way to
-   copy content still being computed. writeText + execCommand as fallbacks,
-   and the CTA only claims "Copied" when a strategy actually succeeded. */
-let lastMsg = '';
+/* ---------- share: one tap ----------
+   Every screen has two ways out and one message: Send opens Messages with it
+   prefilled, Copy puts it on the clipboard. Safari honors either hand-off only
+   when it starts inside the tap itself — it revokes clipboard permission, and
+   balks at opening Messages, once the click task has awaited — yet links encode
+   asynchronously (CompressionStream). So each screen keeps its outgoing message
+   prebuilt (prepare(), rerun after every edit) and the tap hands it over
+   synchronously; copyText also takes a PROMISE for a tap that beats prepare(),
+   handing it to the clipboard via ClipboardItem (the WebKit-blessed way to copy
+   content still being computed), with writeText + execCommand as fallbacks. */
 async function copyText(textOrPromise) {
   const text = () => Promise.resolve(textOrPromise).then(String);
   try {
@@ -846,15 +814,6 @@ async function copyText(textOrPromise) {
     return ok;
   } catch { return false; }
 }
-async function finishShare(msgP, ctaSel, doneLabel) {
-  const copied = copyText(msgP); // must start inside the click task — see copyText
-  lastMsg = await Promise.resolve(msgP).then(String);
-  const msgBtn = document.querySelector('[data-action="send-msg"]');
-  if (msgBtn) msgBtn.hidden = false;   // Messages opens with the text prefilled — no paste
-  const cta = document.querySelector(ctaSel);
-  if (await copied) { toast('Copied — paste it anywhere'); if (cta) cta.textContent = doneLabel; }
-  else { toast('Copy blocked — tap the link below to copy'); if (cta) cta.textContent = 'Tap the link below to copy'; }
-}
 function linkRowHTML(url) {
   return `<button class="linkrow" data-action="copy-url" data-url="${esc(url)}" id="share-url">
     🔗 <span class="trunc">${esc(url)}</span> ⧉</button>`;
@@ -863,6 +822,10 @@ function linkRowHTML(url) {
 /* ---------- history ---------- */
 function logRound(entry) {
   const h = store.get('history', []);
+  const top = h[0];
+  // sending one link twice (Send, then Copy), or reopening the same verdict, is still one round
+  if (top && ((entry.url && top.url === entry.url) ||
+      (entry.stage === 'done' && top.stage === 'done' && top.title === entry.title && top.winner === entry.winner))) h.shift();
   h.unshift({ ts: Date.now(), ...entry });
   store.set('history', h.slice(0, 12));
 }
@@ -913,7 +876,7 @@ function confetti() {
   canvas.width = innerWidth * dpr;
   canvas.height = innerHeight * dpr;
   ctx.scale(dpr, dpr);
-  const colors = ['#E2593A', '#F2A03D', '#3E8E5A', '#7A66D9', '#4FA3D9', '#F5C542'];
+  const colors = ['#2446F0', '#FFC21F', '#D63B1F', '#8FA2FF', '#FFE08A', '#FF9A85']; // the three step colors + tints
   const parts = Array.from({ length: 140 }, () => ({
     x: innerWidth / 2 + (Math.random() - 0.5) * innerWidth * 0.5,
     y: innerHeight * 0.35 + (Math.random() - 0.5) * 60,
@@ -941,7 +904,8 @@ function confetti() {
 }
 
 /* ============================================================
-   VIEWS
+   VIEWS — a step band on top, calm cards below, the one next
+   action pinned to the bottom bar.
    ============================================================ */
 let keepSet = new Set();   // cut view selection
 let struckSet = new Set(); // cut view: crossed-out (local elimination aid, never shared)
@@ -951,11 +915,16 @@ let optEmoji = {};         // compose: hand-picked emoji per option index
 let paletteFor = null;     // compose: which row's emoji palette is open
 let emojiTouched = new Set(); // rows where you opened the palette this render — never auto-fill over your choice
 
-const MAP_ICON = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>`;
+const MAP_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>`;
+const X_ICON = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>`;
 
 const OPT_PLACEHOLDERS = ['that sushi place', 'the thai spot', 'tacos obviously', 'somewhere new', 'the reliable one', 'wildcard', 'dealer’s choice'];
+const tint = (i) => 't' + ((i % 5) + 1); // the pastel square behind each option's emoji
+const shown = (opt) => optLabel(opt) || opt; // an emoji-only option shows as its emoji
+const HIST_STATE = { sent: 'Sent. Waiting on their two.', cut: 'You kept two. Their call.', closed: 'Decided', done: 'Decided' };
 
 function renderHome() {
+  setStage(5, 'compose');
   const name = store.get('name', '');
   const history = store.get('history', []);
   paletteFor = null;
@@ -966,211 +935,208 @@ function renderHome() {
     optEmoji = { ...draft.emoji };
   }
   const optRows = Array.from({ length: composeCount }, (_, i) => `
-    <div class="opt-row">
-      <div class="opt-num">${i + 1}</div>
-      <button class="emoji-btn${optEmoji[i] ? ' set' : ''}" data-action="emoji-pick" data-i="${i}"
-              aria-label="pick an emoji for option ${i + 1}">${optEmoji[i] || '＋'}</button>
-      <input class="text-in opt-in" id="opt${i}" maxlength="64" autocomplete="off" list="opt-suggest"
-             placeholder="${esc(OPT_PLACEHOLDERS[i % OPT_PLACEHOLDERS.length])}">
+    <div class="cell opt-row">
+      <button class="tile ${tint(i)} emoji-btn empty" data-action="emoji-pick" data-i="${i}"
+              aria-label="pick an emoji for option ${i + 1}">＋</button>
+      <input class="opt-in" id="opt${i}" maxlength="64" autocomplete="off" list="opt-suggest" enterkeyhint="next"
+             aria-label="option ${i + 1}" placeholder="${esc(OPT_PLACEHOLDERS[i % OPT_PLACEHOLDERS.length])}">
     </div>`).join('');
 
   app.innerHTML = `
-    <div class="hero">
-      <div class="brand">5<span class="dot">·</span>2<span class="dot">·</span>1</div>
-      <p class="tagline">You list five. They keep two. You pick the winner.</p>
-    </div>
-
-    <div class="card">
-      <h2>Start a round</h2>
-      <div class="field-label">Your five <span style="opacity:.6">(paste a numbered list — it fills itself)</span></div>
-      ${optSuggestList()}
-      ${optRows}
-      ${composeCount < 6 ? '<button class="add-opt" data-action="add-option">+ a 6th — that’s cheating, but fine</button>' : ''}
-      <div class="duo">
-        <div>
-          <div class="field-label">Title — optional</div>
-          <input class="text-in" id="title-in" maxlength="48" autocomplete="off" placeholder="Dinner tonight">
-        </div>
-        <div>
-          <div class="field-label">Your name — optional</div>
-          <input class="text-in" id="name-in" maxlength="24" autocomplete="off" placeholder="you" value="${esc(name)}">
-        </div>
-      </div>
+    ${band('5', `
+      <div class="band-row">${steps(5)}</div>
+      <input class="title-in" id="title-in" maxlength="48" autocomplete="off" enterkeyhint="next"
+             aria-label="what you're deciding" placeholder="What are we deciding?">
       <div class="chips">
         <button class="chip" data-action="chip-title" data-title="Dinner tonight">🍽️ Dinner</button>
         <button class="chip" data-action="chip-title" data-title="Takeout">🥡 Takeout</button>
         <button class="chip" data-action="chip-title" data-title="Movie night">🍿 Movie</button>
         <button class="chip" data-action="chip-title" data-title="Date night">✨ Date night</button>
+      </div>`)}
+    <main class="body">
+      <div class="hdr">Your five</div>
+      ${optSuggestList()}
+      <div class="card">${optRows}</div>
+      <p class="ftr">Paste a numbered list and it fills all five. They keep two, you pick the winner.</p>
+      ${composeCount < 6 ? '<button class="add-opt" data-action="add-option">+ a 6th (that’s cheating, but fine)</button>' : ''}
+      <div class="card gap">
+        <div class="cell plain"><label class="l" for="note-in">Note</label>
+          <textarea class="field note-in" id="note-in" maxlength="140" rows="1" autocomplete="off"
+                    placeholder="anything to tell them? “surprise me”"></textarea></div>
+        <div class="cell plain"><label class="l" for="name-in">From</label>
+          <input class="field" id="name-in" maxlength="24" autocomplete="off" placeholder="your name" value="${esc(name)}"></div>
       </div>
-      <div class="field-label">Note — optional</div>
-      <textarea class="note-in" id="note-in" maxlength="140" rows="2" autocomplete="off"
-                placeholder="anything to tell them? — “surprise me” · “somewhere cozy” · “your call, I mean it”"></textarea>
-      <div class="form-error" id="form-error"></div>
-      <button class="cta" data-action="compose-share" id="cta">Copy the link — they keep 2</button>
-      <button class="cta msg" data-action="send-msg" hidden>💬 Send in Messages</button>
+      <div class="form-error" id="form-error" role="alert"></div>
       <div id="compose-linkrow"></div>
-    </div>
-
-    ${history.length ? `<div class="card"><h2>Recent rounds</h2><div class="hist-list">${history.map((h, i) => `
-      <button class="hist-row" data-action="open-history" data-i="${i}">
-        <span class="hist-emoji">${h.winner ? '🏆' : emojiFor(h.title || '', i)}</span>
-        <span class="hist-main">
-          <span class="hist-title">${esc(h.title || 'Untitled round')}</span>
-          <span class="hist-state">${h.winner ? esc(h.winner) : ({ sent: 'sent — waiting on their 2', cut: 'you kept 2 — their call', closed: 'decided', done: 'decided' }[h.stage] || '')}</span>
-        </span>
-        <span class="hist-date">${fmtDay(h.ts)}</span>
-      </button>`).join('')}</div></div>` : ''}
-
-    ${houseRule}
+      ${history.length ? `<div class="hdr">Recent rounds</div><div class="card hist-list">${history.map((h, i) => `
+        <button class="cell hist-row" data-action="open-history" data-i="${i}">
+          <span class="tile ${tint(i)}">${h.winner ? '🏆' : emojiFor(h.title || '', i)}</span>
+          <span class="hist-main">
+            <span class="hist-title">${esc(h.title || 'Untitled round')}</span>
+            <span class="hist-state">${h.winner ? esc(h.winner) : (HIST_STATE[h.stage] || '')}</span>
+          </span>
+          <span class="hist-date">${fmtDay(h.ts)}</span>
+        </button>`).join('')}</div>` : ''}
+      ${houseRule}
+    </main>
+    ${bar(`
+      <button class="btn" data-action="send-msg" id="cta">Send in Messages</button>
+      <button class="alt" data-action="compose-share" id="cta2" data-label="Copy link">Copy link</button>`)}
   `;
   if (draft) {
     if (draft.title) $('#title-in').value = draft.title;
     if (draft.name) $('#name-in').value = draft.name;
     if (draft.note) $('#note-in').value = draft.note;
     (draft.opts || []).forEach((v, i) => { const el = $('#opt' + i); if (el && v) el.value = v; });
-    for (let i = 0; i < composeCount; i++) updateEmojiBtn(i);
   }
+  for (let i = 0; i < composeCount; i++) updateEmojiBtn(i);
+  fitTitle();
+  document.querySelectorAll('textarea.note-in').forEach(autosize);
+  schedulePrepare();
 }
 
 function renderCut(p) {
+  setStage(2, 'cut');
   struckSet = new Set();
+  keepSet = new Set();
   const myName = store.get('name', '');
   const forSelf = myName && myName === p.l;
-  keepSet = new Set();
   app.innerHTML = `
-    ${stepper(2)}
-    <div class="card" style="text-align:center">
-      <p class="lede">${p.l ? esc(p.l) + ' listed ' + p.o.length + '.' : 'Your cut.'}</p>
-      <p class="sub">Keep the <b>2</b> you actually want.</p>
-      ${p.t ? `<span class="title-chip">${emojiFor(p.t, 0)} ${esc(p.t)}</span>` : ''}
+    ${band('2', `
+      <div class="band-row">${steps(2)}${titlePill(p.t)}</div>
+      <p class="kicker">${p.l ? esc(p.l) + ' sent ' : 'You got '}${countWord(p.o.length)}.</p>
+      <h1>Keep the two you actually want.</h1>`)}
+    <main class="body">
       ${noteBlock(p.l, p.n)}
-      ${forSelf ? `<div class="hint">This is your own list — this link was meant for your partner 😉</div>` : ''}
-    </div>
-    ${geoPanelHTML()}
-    <div class="choices">
-      ${p.o.map((opt, i) => `
-        <div class="choice-row">
-          <button class="choice" data-action="toggle-keep" data-i="${i}" style="animation-delay:${i * 55}ms">
-            <span class="emoji">${emojiFor(opt, i)}</span>
+      ${forSelf ? '<div class="hint">This is your own list. The link is meant for your partner 😉</div>' : ''}
+      ${geoPanelHTML()}
+      <div class="card choices gap">
+        ${p.o.map((opt, i) => `
+        <div class="cell choice-row">
+          <button class="choice" data-action="toggle-keep" data-i="${i}" aria-pressed="false" style="animation-delay:${i * 55}ms">
+            <span class="tile ${tint(i)} emoji">${emojiFor(opt, i)}</span>
             <span class="label">${esc(optLabel(opt))}</span>
-            <span class="badge">KEEP ✓</span>
           </button>
-          <button class="strikebtn" data-action="toggle-strike" data-i="${i}" aria-label="cross out ${esc(optName(opt))}">✕</button>
-          <button class="mapbtn" data-action="show-map" data-i="${i}" aria-label="open ${esc(optName(opt))} in Maps">${MAP_ICON}</button>
+          <button class="ic mapbtn" data-action="show-map" data-i="${i}" aria-label="open ${esc(optName(opt))} in Maps">${MAP_ICON}</button>
+          <button class="ic strikebtn" data-action="toggle-strike" data-i="${i}" aria-label="rule out ${esc(optName(opt))}">${X_ICON}</button>
+          <button class="chk" data-action="toggle-keep" data-i="${i}" tabindex="-1" aria-hidden="true"></button>
         </div>`).join('')}
-    </div>
-    <div class="keep-counter" id="keep-counter">0 of 2 kept · ✕ to rule one out</div>
-    <div class="card">
-      <div class="field-label">Your name — optional</div>
-      <input class="text-in" id="cutter-name" maxlength="24" placeholder="you" value="${esc(forSelf ? '' : myName)}">
-      <div class="field-label">Note back — optional</div>
-      <textarea class="note-in" id="cut-note" maxlength="140" rows="2" autocomplete="off"
-                placeholder="anything to say back? — “number 3 was also fine” · “this was hard”"></textarea>
-      <button class="cta" data-action="cut-share" id="cta" disabled>Copy the link back</button>
-      <button class="cta msg" data-action="send-msg" hidden>💬 Send in Messages</button>
+      </div>
+      <p class="ftr" id="keep-counter">0 of 2 kept. Tap ✕ to rule one out.</p>
+      <div class="card gap">
+        <div class="cell plain"><label class="l" for="cutter-name">From</label>
+          <input class="field" id="cutter-name" maxlength="24" autocomplete="off" placeholder="your name" value="${esc(forSelf ? '' : myName)}"></div>
+        <div class="cell plain"><label class="l" for="cut-note">Note</label>
+          <textarea class="field note-in" id="cut-note" maxlength="140" rows="1" autocomplete="off"
+                    placeholder="anything to say back? “this was hard”"></textarea></div>
+      </div>
       <div id="cut-linkrow"></div>
-    </div>
-    <details class="explain"><summary>First time? How 5·2·1 works</summary>
-      <p>It's a tiny ritual for deciding as a pair: one person lists five options, the other keeps their favorite two, and the lister picks the winner from those. Be honest about what you want — no strategic picks, no guessing what they'd prefer. It works out in the end.</p>
-    </details>
-    ${houseRule}
+      <details class="explain"><summary>First time? How 5·2·1 works</summary>
+        <p>It's a tiny ritual for deciding as a pair: one person lists five options, the other keeps their favorite two, and the lister picks the winner from those. Be honest about what you want — no strategic picks, no guessing what they'd prefer. It works out in the end.</p>
+      </details>
+      ${houseRule}
+    </main>
+    ${bar(`
+      <button class="btn" data-action="send-msg" id="cta" disabled>${p.l ? 'Send back to ' + esc(p.l) : 'Send it back'}</button>
+      <button class="alt" data-action="cut-share" id="cta2" data-label="Copy link" disabled>Copy link</button>`)}
   `;
   initGeo(p, p.o.map((_, i) => i));
 }
 
 function renderClose(p) {
-  const kept = p.k.map((i) => ({ i, text: p.o[i] }));
+  setStage(1, 'close');
   finalPick = null;
+  const kept = p.k.map((i) => ({ i, text: p.o[i] }));
+  const cut = p.o.filter((_, i) => !p.k.includes(i));
   app.innerHTML = `
-    ${stepper(1)}
-    <div class="card" style="text-align:center">
-      <p class="lede">${p.c ? esc(p.c) + ' kept 2.' : 'Down to 2.'}</p>
-      <p class="sub">Your call${p.l ? ', ' + esc(p.l) : ''}. Pick the winner.</p>
-      ${p.t ? `<span class="title-chip">${emojiFor(p.t, 0)} ${esc(p.t)}</span>` : ''}
+    ${band('1', `
+      <div class="band-row">${steps(1)}${titlePill(p.t)}</div>
+      <p class="kicker">${p.c ? esc(p.c) + ' kept two.' : 'Down to two.'}</p>
+      <h1>Pick the winner.</h1>`)}
+    <main class="body">
       ${noteBlock(p.c, p.kn)}
-    </div>
-    ${geoPanelHTML()}
-    <div class="choices" id="final-choices">
-      ${kept.map(({ i, text }, j) => `
-        <div class="choice-row">
-          <button class="choice" data-action="pick-final" data-i="${i}" style="animation-delay:${j * 90}ms">
-            <span class="emoji">${emojiFor(text, i)}</span>
+      ${geoPanelHTML()}
+      <div class="card choices gap" id="final-choices">
+        ${kept.map(({ i, text }, j) => `
+        <div class="cell big choice-row">
+          <button class="choice" data-action="pick-final" data-i="${i}" aria-pressed="false" style="animation-delay:${j * 90}ms">
+            <span class="tile ${tint(i)} emoji">${emojiFor(text, i)}</span>
             <span class="label">${esc(optLabel(text))}</span>
-            <span class="badge">🏆</span>
           </button>
-          <button class="mapbtn" data-action="show-map" data-i="${i}" aria-label="open ${esc(optName(text))} in Maps">${MAP_ICON}</button>
+          <button class="ic mapbtn" data-action="show-map" data-i="${i}" aria-label="open ${esc(optName(text))} in Maps">${MAP_ICON}</button>
+          <button class="chk" data-action="pick-final" data-i="${i}" tabindex="-1" aria-hidden="true"></button>
         </div>`).join('')}
-    </div>
-    <div class="choices" id="ghost-rows">
-      ${p.o.map((opt, i) => p.k.includes(i) ? '' : `
-        <div class="choice-row ghost-row">
-          <div class="choice">
-            <span class="emoji">${emojiFor(opt, i)}</span>
-            <span class="label">${esc(optLabel(opt))}</span>
-          </div>
-        </div>`).join('')}
-    </div>
-    <div id="close-after"></div>
-    ${houseRule}
+      </div>
+      ${cut.length ? `<p class="out" id="ghost-rows">Not kept: ${cut.map((o) => `<span class="ghost-row">${esc(shown(o))}</span>`).join(', ')}</p>` : ''}
+      <div id="close-after"></div>
+      <div id="close-linkrow"></div>
+      ${houseRule}
+    </main>
+    ${bar(`
+      <button class="btn" data-action="send-msg" id="cta" disabled>${p.c ? 'Tell ' + esc(p.c) : 'Send the verdict'}</button>
+      <button class="alt" data-action="close-share" id="cta2" data-label="Copy link" disabled>Copy link</button>`)}
   `;
   initGeo(p, p.k);
 }
 
 function renderDone(p) {
+  setStage(1, 'done');
   const winner = p.o[p.w];
+  const wName = shown(winner);
   // Someone opening this link who has never played and isn't a named player is a
   // fresh recipient — the terminal screen is the moment to invite them to start their own.
   const myName = store.get('name', '');
   const newcomer = !store.get('history', []).length && myName !== p.l && myName !== p.c;
+  const did = (name, verb) => name ? `<b>${esc(name)}</b> ${verb}` : verb[0].toUpperCase() + verb.slice(1);
+  const kept = Array.isArray(p.k) && p.k.length === 2 ? p.k.map((i) => shown(p.o[i])) : null;
+  const notes = [[p.l, p.n], [p.c, p.kn], [p.l, p.wn]].filter(([, text]) => text);
+  const size = wName.length > 22 ? ' xlong' : wName.length > 12 ? ' long' : '';
   app.innerHTML = `
-    ${stepper(0)}
-    <div class="card winner-stage">
-      <div class="trophy">🏆</div>
-      <div class="winner-name">${esc(winner)}</div>
-      <p class="winner-sub">${p.t ? esc(p.t) + ' — ' : ''}decided.</p>
-      ${noteBlock(p.l, p.wn)}
-      <p class="ritual-note">${p.l && p.c
-        ? `${esc(p.l)} listed ${p.o.length} · ${esc(p.c)} kept 2 · ${esc(p.l)} picked the one`
-        : `listed ${p.o.length} · kept 2 · picked 1 — the 5·2·1 way`}</p>
-      ${newcomer ? `<p class="first-invite">New here? <b>5·2·1</b> is how two people decide anything — one lists 5, the other keeps 2, the lister picks 1.</p>` : ''}
-      <button class="cta" data-action="done-restart">${newcomer ? 'Start your own round →' : 'Start the next round'}</button>
-    </div>
-    <details class="explain"><summary>The full five</summary>
-      <p>${p.o.map((o, i) => (i === p.w ? '🏆 ' : '') + esc(o)).join(' · ')}</p>
-    </details>
-    ${houseRule}
+    ${band('1', `
+      <div class="band-row">${steps(0)}</div>
+      <p class="kicker"><span class="trophy">🏆</span> ${p.t ? esc(p.t) + ' is decided.' : 'Decided.'}</p>
+      <div class="winner-name${size}">${esc(wName)}</div>
+      <button class="chip maps" data-action="show-map" data-i="${p.w}">${MAP_ICON} Open in Maps</button>`)}
+    <main class="body">
+      ${newcomer ? '<div class="card invite"><b>New here?</b> 5·2·1 is how two people decide anything: one lists five, the other keeps two, the lister picks one.</div>' : ''}
+      <div class="hdr">How it went</div>
+      <div class="card">
+        <div class="cell"><span class="ntile n5">5</span><span class="step-text">${did(p.l, 'listed')} ${countWord(p.o.length)}<small>${p.o.map((o) => esc(shown(o))).join(', ')}</small></span></div>
+        ${kept ? `<div class="cell"><span class="ntile n2">2</span><span class="step-text">${did(p.c, 'kept')} ${esc(kept[0])} and ${esc(kept[1])}</span></div>` : ''}
+        <div class="cell"><span class="ntile n1">1</span><span class="step-text">${did(p.l, 'picked')} ${esc(wName)}</span></div>
+      </div>
+      ${notes.length ? `<div class="hdr">Notes</div><div class="card round-note">${notes.map(([name, text]) => `
+        <div class="cell plain note-row"><span class="who">${esc(name || 'Note')}</span><span class="said">${esc(text)}</span></div>`).join('')}</div>` : ''}
+      ${houseRule}
+    </main>
+    ${bar(`<button class="btn" data-action="done-restart">${newcomer ? 'Start your own round' : 'Start a new round'}</button>`)}
   `;
   logRound({ title: p.t, stage: 'done', winner });
   setTimeout(confetti, 350);
 }
 
 function renderBroken() {
+  setStage(5, 'broken');
   app.innerHTML = `
-    <div class="hero">
-      <div class="brand">5<span class="dot">·</span>2<span class="dot">·</span>1</div>
-      <p class="tagline">Hmm — that link didn't survive the trip.</p>
-    </div>
-    <div class="card" style="text-align:center">
-      <p class="sub">Ask them to send it again, or start fresh.</p>
-      <button class="cta" data-action="done-restart">Start a round</button>
-    </div>`;
+    ${band('?', `
+      <div class="band-row">${steps(-1)}</div>
+      <h1 style="margin-top:14px">That link didn't survive the trip.</h1>`)}
+    <main class="body">
+      <p class="ftr" style="padding-top:18px">Ask them to send it again, or start fresh.</p>
+      ${houseRule}
+    </main>
+    ${bar('<button class="btn" data-action="done-restart">Start a round</button>')}
+  `;
 }
 
 /* ============================================================
    ACTIONS
    ============================================================ */
-async function currentPayload() {
-  const hash = location.hash.slice(1);
-  if (!hash) return null;
-  return decodePayload(hash);
-}
-
-async function composeShare() {
-  const err = $('#form-error');
-  err.classList.remove('show');
-  const name = $('#name-in').value.trim();
-  const title = $('#title-in').value.trim();
-  const note = $('#note-in').value.trim();
+/* the compose form as a payload — or the reason it isn't one yet */
+function readCompose() {
+  const title = $('#title-in')?.value.trim() ?? '';
+  const name = $('#name-in')?.value.trim() ?? '';
+  const note = $('#note-in')?.value.trim() ?? '';
   const opts = [];
   for (let i = 0; i < composeCount; i++) {
     const v = $('#opt' + i)?.value.trim() ?? '';
@@ -1179,31 +1145,121 @@ async function composeShare() {
     if (v && e) opts.push(e + ' ' + v);
     else if (v || e) opts.push(v || e); // a lone emoji is a legitimate option
   }
-  if (opts.length < 3) { err.textContent = 'Give them at least 3 options (5 is the ritual).'; err.classList.add('show'); return; }
+  if (opts.length < 3) return { error: 'Give them at least 3 options (5 is the ritual).' };
   const lower = opts.map((o) => o.toLowerCase());
-  if (new Set(lower).size !== lower.length) { err.textContent = 'Two of those are the same — every option should be distinct.'; err.classList.add('show'); return; }
-  if (name) store.set('name', name);
-  rememberOpts((i) => $('#opt' + i)?.value); // local-only: learn these names + emoji for next time
-
+  if (new Set(lower).size !== lower.length) return { error: 'Two of those are the same. Every option should be distinct.' };
   const payload = { v: 1, s: 'cut', t: title, l: name, o: opts };
   if (note) payload.n = note; // keep the field out of the URL entirely when unused
-  const urlP = linkFor(payload);
-  const shared = finishShare(urlP, '#cta', 'Copied ✓ — now paste it to them'); // before any await
-  const url = await urlP;
-  store.set('draft', null); // sent — the draft's job is done
-  $('#compose-linkrow').innerHTML = linkRowHTML(url);
-  logRound({ title, stage: 'sent', url });
-  await shared;
+  return { payload, title, name };
 }
 
+/* the one message this screen sends next, as { key, build } — null until the screen is
+   ready (under 3 options, not 2 kept yet, no winner). key changes whenever the message would. */
+function outgoing() {
+  const view = app.dataset.view;
+  const p = routedPayload;
+  let payload = null, lead = '';
+  if (view === 'compose') payload = readCompose().payload || null;
+  else if (view === 'cut' && p && keepSet.size === 2) {
+    payload = { ...p, s: 'close', c: $('#cutter-name')?.value.trim() ?? '', k: [...keepSet].sort((a, b) => a - b) };
+    const kn = $('#cut-note')?.value.trim();
+    if (kn) payload.kn = kn;
+  } else if (view === 'close' && p && finalPick !== null) {
+    payload = { ...p, s: 'done', w: finalPick };
+    const wn = $('#close-note')?.value.trim();
+    if (wn) payload.wn = wn;
+    lead = `🏆 ${p.o[finalPick]}! `; // the verdict reads in the thread before anyone taps
+  }
+  if (!payload) return null;
+  return {
+    key: lead + JSON.stringify(payload),
+    build: async () => { const url = await linkFor(payload); return { url, msg: lead + url }; },
+  };
+}
+
+let prepared = { key: '', url: '', msg: '' };
+let prepTimer = null;
+function schedulePrepare() {
+  clearTimeout(prepTimer);
+  prepTimer = setTimeout(prepare, 120);
+  // an edit makes the last copied link stale: take the "Copied ✓" and the old link row down
+  const copy = $('#cta2');
+  if (copy?.dataset.label && copy.textContent !== copy.dataset.label) copy.textContent = copy.dataset.label;
+  const row = $(`#${app.dataset.view}-linkrow`);
+  if (row) row.innerHTML = '';
+}
+async function prepare() {
+  const spec = outgoing();
+  if (!spec) { prepared = { key: '', url: '', msg: '' }; return prepared; }
+  if (spec.key !== prepared.key) {
+    const built = await spec.build();
+    if (outgoing()?.key === spec.key) prepared = { key: spec.key, ...built };
+  }
+  return prepared;
+}
+
+/* both bottom buttons land here, synchronously inside the tap (see the share note above) */
+function share(via) { // via: 'messages' | 'copy'
+  const view = app.dataset.view;
+  if (view === 'compose') {
+    const { error } = readCompose();
+    const err = $('#form-error');
+    err.textContent = error || '';
+    err.classList.toggle('show', !!error);
+    if (error) return;
+  }
+  const spec = outgoing();
+  if (!spec) return;
+  const ready = prepared.key === spec.key ? prepared : null;
+  const builtP = ready ? Promise.resolve(ready) : spec.build();
+  if (via === 'messages') {
+    const open = (msg) => { location.href = 'sms:&body=' + encodeURIComponent(msg); };
+    if (ready) open(ready.msg);
+    else builtP.then((b) => open(b.msg)); // only when the tap beat prepare(); Messages may ask first
+  }
+  const copiedP = via === 'copy' ? copyText(ready ? ready.msg : builtP.then((b) => b.msg)) : null;
+  afterShare(view, builtP, copiedP);
+}
+async function afterShare(view, builtP, copiedP) {
+  const { url } = await builtP;
+  const p = routedPayload;
+  if (view === 'compose') {
+    const { title, name } = readCompose();
+    if (name) store.set('name', name);
+    rememberOpts((i) => $('#opt' + i)?.value); // local-only: learn these names + emoji for next time
+    store.set('draft', null); // sent — the draft's job is done
+    logRound({ title, stage: 'sent', url });
+  } else if (view === 'cut') {
+    const cutter = $('#cutter-name')?.value.trim();
+    if (cutter) store.set('name', cutter);
+    logRound({ title: p.t, stage: 'cut', url });
+  } else if (view === 'close') {
+    logRound({ title: p.t, stage: 'closed', winner: p.o[finalPick], url });
+  }
+  const row = $(`#${view}-linkrow`);
+  if (row) row.innerHTML = linkRowHTML(url);
+  if (!copiedP) return;
+  const copy = $('#cta2');
+  if (await copiedP) { toast('Link copied. Paste it anywhere.'); if (copy) copy.textContent = 'Copied ✓'; }
+  else { toast('Copy blocked. Tap the link below to copy.'); if (copy) copy.textContent = 'Tap the link below to copy'; }
+}
+
+function markKept(row, on) {
+  row.classList.toggle('kept', on);
+  const main = row.querySelector('.choice');
+  main.classList.toggle('kept', on);
+  main.setAttribute('aria-pressed', String(on));
+}
 function toggleKeep(btn) {
   const i = Number(btn.dataset.i);
-  if (keepSet.has(i)) { keepSet.delete(i); btn.classList.remove('kept'); }
+  const row = btn.closest('.choice-row');
+  if (keepSet.has(i)) keepSet.delete(i);
   else if (keepSet.size < 2) {
-    keepSet.add(i); btn.classList.add('kept');
-    if (struckSet.has(i)) { struckSet.delete(i); btn.closest('.choice-row').classList.remove('struck'); } // keeping un-crosses
+    keepSet.add(i);
+    if (struckSet.has(i)) { struckSet.delete(i); row.classList.remove('struck'); } // keeping un-crosses
   }
-  else { toast('Only 2 — swap one out first'); return; }
+  else { toast('Only 2. Swap one out first.'); return; }
+  markKept(row, keepSet.has(i));
   refreshKeepUI();
 }
 function toggleStrike(btn) {
@@ -1211,84 +1267,49 @@ function toggleStrike(btn) {
   const row = btn.closest('.choice-row');
   if (struckSet.has(i)) { struckSet.delete(i); row.classList.remove('struck'); return; }
   struckSet.add(i); row.classList.add('struck');
-  if (keepSet.has(i)) { keepSet.delete(i); row.querySelector('.choice')?.classList.remove('kept'); refreshKeepUI(); } // crossing out drops the keep
+  if (keepSet.has(i)) { keepSet.delete(i); markKept(row, false); refreshKeepUI(); } // crossing out drops the keep
 }
 function refreshKeepUI() {
+  const full = keepSet.size === 2;
   const counter = $('#keep-counter');
-  if (counter) counter.innerHTML = keepSet.size === 2 ? '<span class="full">2 of 2 kept ✓</span>' : `${keepSet.size} of 2 kept · ✕ to rule one out`;
-  const cta = $('#cta');
-  if (cta) cta.disabled = keepSet.size !== 2;
+  if (counter) counter.innerHTML = full ? '<span class="full">2 of 2 kept ✓</span>' : `${keepSet.size} of 2 kept. Tap ✕ to rule one out.`;
+  for (const id of ['#cta', '#cta2']) { const b = $(id); if (b) b.disabled = !full; }
   document.querySelectorAll('.choices .choice').forEach((c) => {
-    const dim = keepSet.size === 2 && !keepSet.has(Number(c.dataset.i));
-    c.closest('.choice-row').classList.toggle('dimmed-row', dim);
+    c.closest('.choice-row').classList.toggle('dimmed-row', full && !keepSet.has(Number(c.dataset.i)));
   });
-  Object.keys(geo.markers).forEach((k) => setPinVisible(+k, keepSet.size !== 2 || keepSet.has(+k)));
-  if (keepSet.size === 2 && geo.map) {
+  Object.keys(geo.markers).forEach((k) => setPinVisible(+k, !full || keepSet.has(+k)));
+  if (full && geo.map) {
     const pts = [...keepSet].map((k) => geo.markers[k]?.getLatLng()).filter(Boolean);
     if (pts.length === 2) geo.map.fitBounds(pts, { padding: [40, 40], maxZoom: 15 });
   }
+  schedulePrepare();
 }
 
-async function cutShare() {
-  const cutter = $('#cutter-name').value.trim();
-  if (cutter) store.set('name', cutter);
-  const note = $('#cut-note').value.trim();
-  const built = (async () => {
-    const p = await currentPayload();
-    const kept = [...keepSet].sort((a, b) => a - b);
-    const payload = { ...p, s: 'close', c: cutter, k: kept };
-    if (note) payload.kn = note;
-    return { p, url: await linkFor(payload) };
-  })();
-  const shared = finishShare(built.then((b) => b.url), '#cta', 'Copied ✓ — paste it back'); // before any await
-  const { p, url } = await built;
-  $('#cut-linkrow').innerHTML = linkRowHTML(url);
-  logRound({ title: p.t, stage: 'cut', url });
-  await shared;
-}
-
-async function pickFinal(btn) {
-  if (finalPick !== null) return;
+/* picking is a radio: tap the other one to change your mind, right up until you send */
+function pickFinal(btn) {
+  const first = finalPick === null;
   finalPick = Number(btn.dataset.i);
-  const p = await currentPayload();
-  document.querySelectorAll('#final-choices .choice').forEach((c) => {
-    if (Number(c.dataset.i) === finalPick) c.classList.add('winner', 'kept');
-    else { c.classList.add('dimmed'); c.closest('.choice-row').classList.add('dimmed-row'); }
-    c.disabled = true;
+  document.querySelectorAll('#final-choices .choice-row').forEach((row) => {
+    const main = row.querySelector('.choice');
+    const on = Number(main.dataset.i) === finalPick;
+    row.classList.toggle('picked', on);
+    row.classList.toggle('dimmed-row', !on);
+    main.classList.toggle('winner', on);
+    main.setAttribute('aria-pressed', String(on));
   });
   Object.keys(geo.markers).forEach((k) => setPinVisible(+k, +k === finalPick));
   if (geo.markers[finalPick]) showMap(finalPick);
-  confetti();
-  const payload = { ...p, s: 'done', w: finalPick };
-  const url = await linkFor(payload);
-  logRound({ title: p.t, stage: 'closed', winner: p.o[finalPick], url });
-  $('#close-after').innerHTML = `
-    <div class="card" style="text-align:center">
-      <p class="lede">🏆 ${esc(p.o[finalPick])}</p>
-      <p class="sub">Now the sacred final step: tell ${esc(p.c || 'them')}.</p>
-      <div class="field-label" style="text-align:left">Note with the verdict — optional</div>
-      <textarea class="note-in" id="close-note" maxlength="140" rows="2" autocomplete="off"
-                placeholder="a last word? — “it was close” · “good keeps”"></textarea>
-      <button class="cta" data-action="close-share" id="close-cta">Copy the verdict${p.c ? ' for ' + esc(p.c) : ''}</button>
-      <button class="cta msg" data-action="send-msg" hidden>💬 Send in Messages</button>
-      <button class="cta secondary" data-action="undo-final">wait, let me rethink</button>
-      <div id="close-linkrow"></div>
-    </div>`;
-  $('#close-after').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-async function closeShare() {
-  const note = $('#close-note')?.value.trim();
-  const built = (async () => {
-    const p = await currentPayload();
-    const payload = { ...p, s: 'done', w: finalPick };
-    if (note) payload.wn = note;
-    return { p, url: await linkFor(payload) };
-  })();
-  const shared = finishShare(built.then(({ p, url }) => `🏆 ${p.o[finalPick]}! ${url}`), '#close-cta', 'Copied ✓ — go tell them'); // before any await
-  const { url } = await built;
-  $('#close-linkrow').innerHTML = linkRowHTML(url);
-  await shared;
+  for (const id of ['#cta', '#cta2']) { const b = $(id); if (b) b.disabled = false; }
+  if (first) {
+    confetti();
+    $('#close-after').innerHTML = `
+      <div class="card gap">
+        <div class="cell plain"><label class="l" for="close-note">Note</label>
+          <textarea class="field note-in" id="close-note" maxlength="140" rows="1" autocomplete="off"
+                    placeholder="a last word? “it was close”"></textarea></div>
+      </div>`;
+  }
+  schedulePrepare();
 }
 
 /* ---------- event delegation ---------- */
@@ -1298,15 +1319,13 @@ app.addEventListener('click', (e) => {
   // gave up on the emoji? tapping anywhere else puts the palette away
   if (paletteFor !== null && act !== 'emoji-pick' && !e.target.closest('.emoji-palette')) closePalette();
   if (!el) return;
-  if (act === 'chip-title') { $('#title-in').value = el.dataset.title; saveDraft(); }
+  if (act === 'chip-title') { $('#title-in').value = el.dataset.title; fitTitle(); saveDraft(); schedulePrepare(); }
   else if (act === 'add-option') { composeCount = Math.min(6, composeCount + 1); const vals = saveComposeValues(); renderHome(); restoreComposeValues(vals); saveDraft(); toast('The ritual is five. Desperation noted 😌'); }
-  else if (act === 'compose-share') composeShare();
+  else if (act === 'send-msg') share('messages');
+  else if (act === 'compose-share' || act === 'cut-share' || act === 'close-share') share('copy');
   else if (act === 'toggle-keep') toggleKeep(el);
   else if (act === 'toggle-strike') toggleStrike(el);
-  else if (act === 'cut-share') cutShare();
   else if (act === 'pick-final') pickFinal(el);
-  else if (act === 'undo-final') { finalPick = null; route(); }
-  else if (act === 'close-share') closeShare();
   else if (act === 'done-restart') { location.hash = ''; composeCount = 5; optEmoji = {}; route(); }
   else if (act === 'emoji-pick') { const i = Number(el.dataset.i); paletteFor === i ? closePalette() : openPalette(i); }
   else if (act === 'emoji-set') {
@@ -1316,9 +1335,9 @@ app.addEventListener('click', (e) => {
     closePalette();
     updateEmojiBtn(i);
     saveDraft();
+    schedulePrepare();
   }
   else if (act === 'show-map') showMap(Number(el.dataset.i));
-  else if (act === 'send-msg') { if (lastMsg) location.href = 'sms:&body=' + encodeURIComponent(lastMsg); }
   else if (act === 'copy-url') {
     copyText(el.dataset.url).then((ok) => toast(ok ? 'Link copied ✓' : 'Long-press the link to copy'));
   }
@@ -1343,6 +1362,9 @@ function restoreComposeValues(v) {
   if ($('#note-in')) $('#note-in').value = v.note ?? '';
   v.opts.forEach((val, i) => { if ($('#opt' + i)) $('#opt' + i).value = val; });
   for (let i = 0; i < composeCount; i++) updateEmojiBtn(i);
+  fitTitle();
+  document.querySelectorAll('textarea.note-in').forEach(autosize);
+  schedulePrepare();
 }
 
 /* ---------- compose emoji picker ---------- */
@@ -1354,6 +1376,7 @@ function updateEmojiBtn(i) {
   const ex = optEmoji[i];
   btn.classList.toggle('set', !!ex);
   btn.classList.toggle('auto', !ex && !!v);
+  btn.classList.toggle('empty', !ex && !v);
   btn.textContent = ex || (v ? emojiFor(v, i) : '＋'); // no pick yet → live-preview the auto-guess
 }
 function closePalette() { $('#emoji-palette')?.remove(); paletteFor = null; }
@@ -1380,31 +1403,47 @@ function openPalette(i) {
   emojiBtnFor(i).closest('.opt-row').after(pal);
   pal.querySelector('#pal-search').focus(); // start typing immediately
 }
-/* the emoji button live-previews what the cut view will auto-guess */
+/* the title is the band's headline: a long one steps down a size instead of scrolling out of view */
+function fitTitle() {
+  const el = $('#title-in');
+  if (!el) return;
+  const n = (el.value || el.placeholder).length;
+  el.style.fontSize = n > 24 ? '26px' : n > 15 ? '32px' : '';
+}
+function autosize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+/* as you type: the emoji button previews what the cut view will auto-guess, the draft saves,
+   notes grow to fit, and the outgoing link rebuilds so Send still works in one tap */
 app.addEventListener('input', (e) => {
-  if (e.target.classList?.contains('opt-in')) {
-    const i = Number(e.target.id.slice(3));
+  const t = e.target;
+  if (t.tagName === 'TEXTAREA') autosize(t);
+  if (t.id === 'pal-search') {
+    const grid = $('#pal-grid');
+    if (grid) grid.innerHTML = palCells(Number(t.dataset.i), t.value);
+    return;
+  }
+  if (t.classList?.contains('opt-in')) {
+    const i = Number(t.id.slice(3));
     if (!optEmoji[i] && !emojiTouched.has(i)) {          // seed your remembered emoji — but never over a choice you're making
-      const remembered = rememberedEmoji(e.target.value);
+      const remembered = rememberedEmoji(t.value);
       if (remembered) optEmoji[i] = remembered;
     }
     updateEmojiBtn(i);
     saveDraft();
   }
-  else if (e.target.id === 'pal-search') {
-    const grid = $('#pal-grid');
-    if (grid) grid.innerHTML = palCells(Number(e.target.dataset.i), e.target.value);
-  }
-  else if (['title-in', 'name-in', 'note-in'].includes(e.target.id)) saveDraft();
+  else if (t.id === 'title-in') { fitTitle(); saveDraft(); }
+  else if (['name-in', 'note-in'].includes(t.id)) saveDraft();
+  schedulePrepare();
 });
-/* enter → next option field */
+/* enter → next field: title → option 1 → … → the last option */
 app.addEventListener('keydown', (e) => {
-  if (e.key !== 'Enter' || !e.target.classList?.contains('opt-in')) return;
+  if (e.key !== 'Enter') return;
+  const t = e.target;
+  if (t.id === 'title-in') { e.preventDefault(); $('#opt0')?.focus(); return; }
+  if (!t.classList?.contains('opt-in')) return;
   e.preventDefault();
-  const i = Number(e.target.id.slice(3));
-  const next = $('#opt' + (i + 1));
+  const next = $('#opt' + (Number(t.id.slice(3)) + 1));
   if (next) next.focus();
-  else e.target.blur();
+  else t.blur();
 });
 /* paste a numbered list into any option field → fill the five */
 app.addEventListener('paste', (e) => {
@@ -1430,13 +1469,14 @@ app.addEventListener('paste', (e) => {
   lines.slice(0, 6 - start).forEach((l, j) => { const el = $('#opt' + (start + j)); if (el) el.value = l.slice(0, 64); });
   for (let i = 0; i < composeCount; i++) updateEmojiBtn(i);
   saveDraft();
+  schedulePrepare();
   toast('Filled from your list ✂️');
 });
 
 /* number keys toggle choices, Escape puts the emoji palette away (desktop niceties) */
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && paletteFor !== null) { closePalette(); return; }
-  if (e.target.tagName === 'INPUT') return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   const n = Number(e.key);
   if (n >= 1 && n <= 7) {
     const btn = document.querySelectorAll('.choices .choice')[n - 1];
@@ -1448,6 +1488,7 @@ document.addEventListener('keydown', (e) => {
 let routedPayload = null;
 async function route() {
   keepSet = new Set(); finalPick = null; resetGeo();
+  prepared = { key: '', url: '', msg: '' };
   let p = null;
   const hash = location.hash.slice(1);
   if (hash) {

@@ -14,6 +14,7 @@ async function run() {
   let d = f.contentDocument;
   A('home renders brand', !!d.querySelector('.brand'));
   A('home has 5 option inputs', d.querySelectorAll('.opt-in').length === 5);
+  A('compose wears the blue step band (5)', d.querySelector('#app').dataset.stage === '5' && !!d.querySelector('.band .giant'));
 
   // --- paste a numbered list into option 1 ---
   const W = f.contentWindow;
@@ -63,7 +64,8 @@ async function run() {
   const cutUrl = d.querySelector('#compose-linkrow #share-url')?.dataset.url || '';
   A('compose generates cut link', cutUrl.includes('#'));
   A('share sheet is gone', !d.querySelector('[data-action="share-alt"]'));
-  A('send-in-messages revealed', d.querySelector('[data-action="send-msg"]')?.hidden === false);
+  A('send-in-messages offered', d.querySelector('[data-action="send-msg"]')?.hidden === false);
+  A('send link prebuilt for a one-tap Messages hand-off', (await f.contentWindow.prepare()).msg === cutUrl);
   log.push('CUTURL ' + cutUrl);
 
   // --- cut (hash change, same document) ---
@@ -73,7 +75,8 @@ async function run() {
   A('cut renders 5 choices', d.querySelectorAll('.choices .choice').length === 5);
   A('cut has 5 map pins', d.querySelectorAll('.choices .mapbtn').length === 5);
   A('map view deferred (no panel)', !d.querySelector('#geo-panel'));
-  A('cut names the lister', d.body.textContent.includes('Tyler listed 5'));
+  A('cut names the lister', d.body.textContent.includes('Tyler sent five'));
+  A('cut wears the yellow step band (2)', d.querySelector('#app').dataset.stage === '2');
   A('cut shows the lister note', !!d.querySelector('.round-note') && d.querySelector('.round-note').textContent.includes('surprise me, somewhere warm'));
   A('cut emoji matched sushi', d.body.textContent.includes('🍣'));
   const shakeRow = [...d.querySelectorAll('.choices .choice')].find((c) => c.querySelector('.emoji').textContent === '🌮');
@@ -102,15 +105,25 @@ async function run() {
   await sleep(400);
   d = f.contentDocument;
   A('close renders exactly 2', d.querySelectorAll('#final-choices .choice').length === 2);
-  A('close names the cutter', d.body.textContent.includes('Partner kept 2'));
+  A('close names the cutter', d.body.textContent.includes('Partner kept two'));
+  A('close wears the red step band (1)', d.querySelector('#app').dataset.stage === '1');
+  A('close send waits for a pick', d.querySelector('#cta').disabled === true);
   A('close shows the note passed back', !!d.querySelector('.round-note') && d.querySelector('.round-note').textContent.includes('number 3 was also fine'));
   A('cut three ghosted below, same style', d.querySelectorAll('#ghost-rows .ghost-row').length === 3 &&
     d.body.textContent.includes('Pisticci'));
   d.querySelectorAll('#final-choices .choice')[0].click();
   await sleep(500);
-  A('winner card appears', !!d.querySelector('#close-after .lede'));
-  A('undo offered', !!d.querySelector('[data-action="undo-final"]'));
+  A('verdict note appears after a pick', !!d.querySelector('#close-after #close-note'));
+  A('send enabled once picked', d.querySelector('#cta').disabled === false);
+  d.querySelectorAll('#final-choices .choice')[1].click(); // changed my mind…
+  await sleep(150);
+  const rows = d.querySelectorAll('#final-choices .choice-row');
+  A('re-pick moves the winner', rows[1].classList.contains('picked') && !rows[0].classList.contains('picked'));
+  d.querySelectorAll('#final-choices .choice')[0].click(); // …and back
+  await sleep(150);
   d.querySelector('#close-note').value = 'it was close';
+  const verdict = (await f.contentWindow.prepare()).msg;
+  A('verdict message leads with the winner', verdict.startsWith('🏆 Sushi Yasaka! ') && verdict.includes('#2'));
   d.querySelector('[data-action="close-share"]').click();
   await sleep(400);
   const doneUrl = d.querySelector('#close-linkrow #share-url')?.dataset.url || '';
@@ -124,7 +137,7 @@ async function run() {
   A('done shows trophy', !!d.querySelector('.trophy'));
   A('done shows winner', d.body.textContent.includes('Sushi Yasaka'));
   A('done shows the verdict note', !!d.querySelector('.round-note') && d.querySelector('.round-note').textContent.includes('it was close'));
-  A('done credits the ritual', d.body.textContent.includes('kept 2'));
+  A('done credits the ritual', d.body.textContent.includes('Partner kept Sushi Yasaka'));
 
   // --- history + broken link ---
   f.contentWindow.location.href = '/index.html#not-a-real-payload';
