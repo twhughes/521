@@ -241,14 +241,6 @@
     display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
   }
 
-  /* ---------- history ---------- */
-  .hist-list { max-height: 216px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-  .hist-row { width: 100%; border: 0; background: none; text-align: left; color: var(--ink); }
-  .hist-main { flex: 1; min-width: 0; padding: 9px 0; }
-  .hist-title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; font-weight: 650; }
-  .hist-state { display: block; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500; color: var(--ink2); }
-  .hist-date { flex: none; font-size: 13px; color: var(--ink2); }
-
   /* ---------- winner ---------- */
   .ntile { flex: none; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-size: 22px; font-weight: 900; font-stretch: 62%; }
   .n5 { background: var(--blue); color: #FFFFFF; } .n2 { background: var(--yellow); color: #000000; } .n1 { background: var(--red); color: #FFFFFF; }
@@ -833,6 +825,8 @@ function linkRowHTML(url) {
 }
 
 /* ---------- history ---------- */
+/* no longer shown (the Messages thread is the history); kept because it answers
+   "has this phone played before?" for the first-timer invite and explainer */
 function logRound(entry) {
   const h = store.get('history', []);
   const top = h[0];
@@ -841,13 +835,6 @@ function logRound(entry) {
       (entry.stage === 'done' && top.stage === 'done' && top.title === entry.title && top.winner === entry.winner))) h.shift();
   h.unshift({ ts: Date.now(), ...entry });
   store.set('history', h.slice(0, 12));
-}
-function fmtDay(ts) {
-  const d = new Date(ts), now = new Date();
-  const days = Math.floor((now - d) / 86400000);
-  if (d.toDateString() === now.toDateString()) return 'today';
-  if (days < 2) return 'yesterday';
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 /* ---------- local option memory (THIS PHONE ONLY — never travels in a link) ----------
@@ -934,7 +921,6 @@ const X_ICON = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stro
 const OPT_PLACEHOLDERS = ['that sushi place', 'the thai spot', 'tacos obviously', 'somewhere new', 'the reliable one', 'wildcard', 'dealer’s choice'];
 const tint = (i) => 't' + ((i % 5) + 1); // the pastel square behind each option's emoji
 const shown = (opt) => optLabel(opt) || opt; // an emoji-only option shows as its emoji
-const HIST_STATE = { sent: 'Sent. Waiting on their two.', cut: 'You kept two. Their call.', closed: 'Decided', done: 'Decided' };
 /* a note starts folded into its ✎ row so each step fits one screen; revealNote() unfolds it */
 const noteCell = (id, placeholder) => `
   <div class="cell plain" hidden><label class="l" for="${id}">Note</label>
@@ -953,7 +939,6 @@ function revealNote(id, focus) {
 function renderHome() {
   setStage(5, 'compose');
   const name = store.get('name', '');
-  const history = store.get('history', []);
   paletteFor = null;
   emojiTouched = new Set();
   const draft = store.get('draft', null); // a half-typed five survives reloads until it's sent
@@ -994,15 +979,6 @@ function renderHome() {
       </div>
       <div class="form-error" id="form-error" role="alert"></div>
       <div id="compose-linkrow"></div>
-      ${history.length ? `<div class="hdr">Recent rounds</div><div class="card hist-list">${history.map((h, i) => `
-        <button class="cell hist-row" data-action="open-history" data-i="${i}">
-          <span class="tile ${tint(i)}">${h.winner ? '🏆' : emojiFor(h.title || '', i)}</span>
-          <span class="hist-main">
-            <span class="hist-title">${esc(h.title || 'Untitled round')}</span>
-            <span class="hist-state">${h.winner ? esc(h.winner) : (HIST_STATE[h.stage] || '')}</span>
-          </span>
-          <span class="hist-date">${fmtDay(h.ts)}</span>
-        </button>`).join('')}</div>` : ''}
       ${houseRule}
     </main>
     ${bar(`
@@ -1365,10 +1341,6 @@ app.addEventListener('click', (e) => {
   else if (act === 'show-map') showMap(Number(el.dataset.i));
   else if (act === 'copy-url') {
     copyText(el.dataset.url).then((ok) => toast(ok ? 'Link copied ✓' : 'Long-press the link to copy'));
-  }
-  else if (act === 'open-history') {
-    const h = store.get('history', [])[Number(el.dataset.i)];
-    if (h?.url) location.href = h.url;
   }
 });
 function saveDraft() {

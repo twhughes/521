@@ -174,8 +174,8 @@ async function run() {
   f.contentWindow.location.href = '/index.html';
   await sleep(400);
   d = f.contentDocument;
-  A('history remembers rounds', d.body.textContent.includes('Recent rounds'));
-  A('history logged the win', d.body.textContent.includes('🏆'));
+  A('no recent-rounds list on home', !d.body.textContent.includes('Recent rounds'));
+  A('rounds still logged on this phone (first-timer checks)', JSON.parse(f.contentWindow.localStorage.getItem('521.history') || '[]').some((h) => h.winner === 'Sushi Yasaka'));
   A('draft survives into a fresh load', d.querySelector('#opt1')?.value === 'Optimist');
 
   finish();
