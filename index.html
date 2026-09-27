@@ -65,68 +65,74 @@
     background: var(--page); color: var(--ink); -webkit-font-smoothing: antialiased;
     min-height: 100vh; min-height: 100dvh;
   }
+  /* band, body, bar in one column: the bar is sticky, so a step that fits the screen never scrolls */
+  #app { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
   button, input, textarea { font: inherit; color: inherit; }
   button { cursor: pointer; }
   button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  [hidden] { display: none !important; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
   /* ---------- the step band ---------- */
-  .band { position: relative; overflow: hidden; background: var(--band); color: var(--band-ink); border-radius: 0 0 28px 28px; }
-  .band-in { position: relative; max-width: 440px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 16px) 22px 24px; }
+  .band { position: relative; overflow: hidden; background: var(--band); color: var(--band-ink); border-radius: 0 0 24px 24px; }
+  .band-in { position: relative; max-width: 440px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 12px) 22px 18px; }
   .giant {
-    position: absolute; right: -20px; top: calc(env(safe-area-inset-top) - 34px);
-    font-size: 330px; line-height: 0.8; font-weight: 900; font-stretch: 62%; letter-spacing: -6px;
+    position: absolute; right: -16px; top: calc(env(safe-area-inset-top) - 24px);
+    font-size: 250px; line-height: 0.8; font-weight: 900; font-stretch: 62%; letter-spacing: -6px;
     color: var(--num); pointer-events: none; user-select: none; -webkit-user-select: none;
   }
   .band .z { position: relative; }
-  .band-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 30px; }
-  .steps { display: flex; gap: 8px; font-size: 22px; font-weight: 900; font-stretch: 62%; line-height: 1; }
+  .band-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; }
+  .steps { display: flex; gap: 8px; font-size: 20px; font-weight: 900; font-stretch: 62%; line-height: 1; }
   .steps span { opacity: 0.35; }
   .steps .on { opacity: 1; }
   .pill {
-    display: inline-block; max-width: 62%; height: 30px; line-height: 30px; padding: 0 12px; border-radius: 15px;
-    background: var(--chip); font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: inline-block; max-width: 62%; height: 28px; line-height: 28px; padding: 0 11px; border-radius: 14px;
+    background: var(--chip); font-size: 13.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .kicker { margin-top: 16px; font-size: 16px; font-weight: 700; color: var(--band-soft); overflow-wrap: anywhere; }
-  .band h1 { margin-top: 4px; font-size: 34px; line-height: 1.02; font-weight: 850; letter-spacing: -1px; }
+  .kicker { margin-top: 10px; font-size: 15px; font-weight: 700; color: var(--band-soft); overflow-wrap: anywhere; text-wrap: balance; }
+  .band h1 { margin-top: 2px; font-size: 28px; line-height: 1.04; font-weight: 850; letter-spacing: -1px; text-wrap: balance; }
   .title-in {
-    display: block; width: 100%; margin-top: 12px; padding: 0 0 2px; border: 0; border-bottom: 2px solid transparent; border-radius: 0;
+    display: block; width: 100%; margin-top: 6px; padding: 0 0 2px; border: 0; border-bottom: 2px solid transparent; border-radius: 0;
     outline: 0; background: transparent; color: var(--band-ink); caret-color: currentColor;
-    font-size: 40px; line-height: 1.1; font-weight: 850; letter-spacing: -1.2px;
+    font-size: 36px; line-height: 1.1; font-weight: 850; letter-spacing: -1.1px;
   }
   .title-in:focus { border-bottom-color: var(--band-soft); }
   .title-in::placeholder { color: var(--band-ink); opacity: 0.45; }
   /* one row that scrolls sideways, bleeding to the band's edges, instead of wrapping onto a second line */
-  .chips { display: flex; gap: 6px; margin: 12px -22px 0; padding: 0 22px; overflow-x: auto; scrollbar-width: none; }
+  .chips { display: flex; gap: 6px; margin: 10px -22px 0; padding: 0 22px; overflow-x: auto; scrollbar-width: none; }
+  /* the chips only start a title: once there is one they fold away and give the screen back */
+  .band:has(.title-in:not(:placeholder-shown)) .chips { display: none; }
   .chips::-webkit-scrollbar { display: none; }
   .chip {
-    display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border: 0; border-radius: 15px;
+    display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border: 0; border-radius: 14px;
     flex: none; background: var(--chip); color: var(--band-ink); font-size: 13.5px; font-weight: 700; white-space: nowrap; transition: transform 0.15s ease;
   }
   .chip:active { transform: scale(0.94); }
-  .chip.maps { margin-top: 14px; height: 34px; padding: 0 14px; border-radius: 17px; font-size: 15px; }
-  .winner-name { margin-top: 8px; font-size: 64px; line-height: 0.88; font-weight: 900; font-stretch: 66%; letter-spacing: -1px; overflow-wrap: anywhere; }
-  .winner-name.long { font-size: 50px; }
-  .winner-name.xlong { font-size: 38px; }
+  .chip.maps { margin-top: 12px; height: 32px; padding: 0 13px; border-radius: 16px; font-size: 15px; }
+  .winner-name { margin-top: 6px; font-size: 58px; line-height: 0.88; font-weight: 900; font-stretch: 66%; letter-spacing: -1px; overflow-wrap: anywhere; text-wrap: balance; }
+  .winner-name.long { font-size: 46px; }
+  .winner-name.xlong { font-size: 34px; }
 
   /* ---------- the calm body: cards of cells ---------- */
-  .body { max-width: 440px; margin: 0 auto; padding: 0 16px calc(150px + env(safe-area-inset-bottom)); }
-  .hdr { padding: 18px 6px 7px; font-size: 13.5px; font-weight: 600; color: var(--ink2); }
-  .ftr { padding: 8px 6px 0; font-size: 13.5px; font-weight: 500; line-height: 1.4; color: var(--ink2); }
+  .body { flex: 1 0 auto; width: 100%; max-width: 440px; margin: 0 auto; padding: 0 16px 16px; }
+  .hdr { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 6px 6px; font-size: 13.5px; font-weight: 600; color: var(--ink2); }
+  .ftr { padding: 6px 6px 0; font-size: 13.5px; font-weight: 500; line-height: 1.4; color: var(--ink2); }
   .ftr .full { color: var(--ink); font-weight: 700; }
   .card { background: var(--card); border-radius: 16px; overflow: hidden; }
-  .gap { margin-top: 14px; }
-  .cell { position: relative; display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 0 14px; }
-  .cell + .cell::before { content: ""; position: absolute; top: 0; right: 0; left: 60px; height: 1px; background: var(--sep); }
+  .gap { margin-top: 10px; }
+  .cell { position: relative; display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 14px; }
+  .cell + .cell::before { content: ""; position: absolute; top: 0; right: 0; left: 56px; height: 1px; background: var(--sep); }
+  .cell[hidden] + .cell::before { display: none; }
   .cell.plain + .cell.plain::before { left: 14px; }
   .tile {
-    flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
-    font-size: 19px; line-height: 1; background: var(--t1); border: 0; padding: 0;
+    flex: none; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+    font-size: 17px; line-height: 1; background: var(--t1); border: 0; padding: 0;
   }
   .t1 { background: var(--t1); } .t2 { background: var(--t2); } .t3 { background: var(--t3); } .t4 { background: var(--t4); } .t5 { background: var(--t5); }
-  .cell .l { flex: none; width: 50px; align-self: flex-start; padding-top: 16px; font-size: 16px; font-weight: 500; color: var(--ink2); }
+  .cell .l { flex: none; width: 46px; align-self: flex-start; padding-top: 13px; font-size: 16px; font-weight: 500; color: var(--ink2); }
   .field {
-    flex: 1; min-width: 0; padding: 15px 0; border: 0; border-radius: 0; outline: 0; background: transparent;
+    flex: 1; min-width: 0; padding: 12px 0; border: 0; border-radius: 0; outline: 0; background: transparent;
     font-size: 16px; font-weight: 500; line-height: 1.4; color: var(--ink);
   }
   textarea.field { display: block; resize: none; }
@@ -135,13 +141,17 @@
   /* ---------- compose ---------- */
   .emoji-btn { transition: transform 0.15s ease, opacity 0.15s ease; }
   .emoji-btn:active { transform: scale(0.9); }
-  .emoji-btn.auto { opacity: 0.5; }
   .emoji-btn.empty { color: var(--ink2); font-size: 18px; }
   .opt-in {
-    flex: 1; min-width: 0; padding: 16px 0; border: 0; border-radius: 0; outline: 0; background: transparent;
-    font-size: 18px; font-weight: 600; letter-spacing: -0.2px; color: var(--ink);
+    flex: 1; min-width: 0; padding: 13px 0; border: 0; border-radius: 0; outline: 0; background: transparent;
+    font-size: 17px; font-weight: 600; letter-spacing: -0.2px; color: var(--ink);
   }
-  .add-opt { display: block; padding: 8px 6px 0; border: 0; background: none; font-size: 13.5px; font-weight: 600; color: var(--ink2); }
+  .add-opt { padding: 0; border: 0; background: none; font-size: 13.5px; font-weight: 600; color: var(--ink2); }
+  /* note + name fold into one row; tapping ✎ unfolds the note */
+  .meta-row { justify-content: space-between; }
+  .add-note { flex: none; padding: 12px 0; border: 0; background: none; font-size: 16px; font-weight: 600; color: var(--ink2); }
+  .from { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 500; color: var(--ink2); }
+  .from .field { flex: none; width: 7.5em; }
   .emoji-palette {
     padding: 10px 12px 12px; background: var(--well); border-top: 1px solid var(--sep); border-bottom: 1px solid var(--sep);
     animation: rise 0.25s cubic-bezier(0.22, 1, 0.36, 1) backwards;
@@ -158,26 +168,26 @@
 
   /* ---------- notes: a small bubble with the sender's initial ---------- */
   .bubble {
-    display: flex; align-items: flex-start; gap: 10px; width: fit-content; max-width: 100%; margin-top: 16px;
-    padding: 9px 14px 9px 9px; border-radius: 18px; background: var(--card);
-    font-size: 16.5px; font-weight: 550; line-height: 1.35;
+    display: flex; align-items: flex-start; gap: 9px; width: fit-content; max-width: 100%; margin-top: 12px;
+    padding: 7px 13px 7px 7px; border-radius: 18px; background: var(--card);
+    font-size: 16px; font-weight: 550; line-height: 1.35;
   }
   .bubble .said { padding-top: 4px; overflow-wrap: anywhere; white-space: pre-wrap; }
-  .av { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--av); display: grid; place-items: center; font-size: 13px; font-weight: 800; }
-  .hint { margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: var(--card); font-size: 14px; font-weight: 550; line-height: 1.4; color: var(--ink2); }
+  .av { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--av); display: grid; place-items: center; font-size: 13px; font-weight: 800; }
+  .hint { margin-top: 10px; padding: 12px 14px; border-radius: 14px; background: var(--card); font-size: 14px; font-weight: 550; line-height: 1.4; color: var(--ink2); }
 
   /* ---------- choices: keep 2, pick 1 ---------- */
   .choice-row { gap: 2px; padding-right: 12px; }
   .choice {
-    flex: 1; min-width: 0; min-height: 54px; display: flex; align-items: center; gap: 12px; padding: 0;
+    flex: 1; min-width: 0; min-height: 48px; display: flex; align-items: center; gap: 12px; padding: 0;
     border: 0; background: none; text-align: left; color: var(--ink);
-    font-size: 18px; font-weight: 600; letter-spacing: -0.2px; transition: opacity 0.2s ease;
+    font-size: 17.5px; font-weight: 600; letter-spacing: -0.2px; transition: opacity 0.2s ease;
     animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
   }
-  .choice .label { flex: 1; min-width: 0; padding: 8px 0; line-height: 1.25; overflow-wrap: anywhere; }
-  .cell.big .choice { min-height: 66px; font-size: 21px; font-weight: 700; }
+  .choice .label { flex: 1; min-width: 0; padding: 6px 0; line-height: 1.25; overflow-wrap: anywhere; }
+  .cell.big .choice { min-height: 56px; font-size: 20px; font-weight: 700; }
   .ic {
-    flex: none; width: 34px; height: 44px; display: grid; place-items: center; padding: 0;
+    flex: none; width: 32px; height: 44px; display: grid; place-items: center; padding: 0;
     border: 0; background: none; color: var(--ink2); opacity: 0.55; transition: opacity 0.15s ease, color 0.15s ease;
   }
   .chk {
@@ -195,27 +205,28 @@
   .choice-row.struck .emoji { opacity: 0.35; }
   .choice-row.struck .strikebtn { opacity: 1; color: var(--ink); }
   .choice-row.dimmed-row .choice, .choice-row.dimmed-row .chk { opacity: 0.4; }
-  .out { padding: 10px 6px 0; font-size: 14px; font-weight: 500; line-height: 1.4; color: var(--ink2); }
+  .out { padding: 8px 6px 0; font-size: 14px; font-weight: 500; line-height: 1.4; color: var(--ink2); }
   @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
 
   /* ---------- the one next action, pinned to the thumb ---------- */
   .bar {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    position: sticky; bottom: 0; z-index: 40;
     background: var(--bar); border-top: 1px solid var(--bar-line);
     -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
   }
-  .bar-in { max-width: 440px; margin: 0 auto; padding: 12px 16px calc(8px + env(safe-area-inset-bottom)); }
+  /* Send and Copy share one row: the bar stays one button tall */
+  .bar-in { display: flex; gap: 10px; max-width: 440px; margin: 0 auto; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); }
   .btn {
-    display: flex; align-items: center; justify-content: center; width: 100%; height: 54px; border: 0; border-radius: 14px;
+    flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: center; height: 50px; border: 0; border-radius: 14px;
     background: var(--st); color: var(--st-ink); font-size: 18px; font-weight: 800; letter-spacing: -0.2px;
     transition: transform 0.15s ease, opacity 0.2s ease;
   }
   .btn:active { transform: scale(0.98); }
   .btn:disabled { opacity: 0.35; cursor: default; transform: none; }
-  .alt { display: flex; align-items: center; justify-content: center; width: 100%; height: 44px; margin-top: 2px; border: 0; background: none; color: var(--ink); font-size: 16px; font-weight: 650; }
+  .alt { flex: none; display: flex; align-items: center; justify-content: center; height: 50px; padding: 0 16px; border: 0; border-radius: 14px; background: var(--card); color: var(--ink); font-size: 16px; font-weight: 700; white-space: nowrap; }
   .alt:disabled { opacity: 0.35; cursor: default; }
   .linkrow {
-    display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 14px; padding: 12px 14px; border: 0; border-radius: 14px;
+    display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 10px; padding: 11px 14px; border: 0; border-radius: 14px;
     background: var(--card); color: var(--ink2); font-size: 13px; font-weight: 500; text-align: left;
   }
   .linkrow .trunc { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -239,26 +250,27 @@
   .hist-date { flex: none; font-size: 13px; color: var(--ink2); }
 
   /* ---------- winner ---------- */
-  .ntile { flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-size: 25px; font-weight: 900; font-stretch: 62%; }
+  .ntile { flex: none; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-size: 22px; font-weight: 900; font-stretch: 62%; }
   .n5 { background: var(--blue); color: #FFFFFF; } .n2 { background: var(--yellow); color: #000000; } .n1 { background: var(--red); color: #FFFFFF; }
-  .step-text { flex: 1; min-width: 0; padding: 12px 0; font-size: 16px; font-weight: 500; line-height: 1.35; }
+  .step-row { align-items: flex-start; }
+  .step-row .ntile { margin-top: 9px; }
+  .step-text { flex: 1; min-width: 0; padding: 10px 0; font-size: 15.5px; font-weight: 500; line-height: 1.35; }
   .step-text b { font-weight: 800; }
   .step-text small { display: block; margin-top: 2px; font-size: 13.5px; color: var(--ink2); }
-  .note-row .who { flex: none; width: 56px; align-self: flex-start; padding: 13px 0; font-size: 15px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; }
-  .note-row .said { flex: 1; min-width: 0; padding: 13px 0; font-size: 15.5px; font-weight: 500; line-height: 1.4; color: var(--said); overflow-wrap: anywhere; white-space: pre-wrap; }
-  .invite { margin-top: 16px; padding: 14px 16px; font-size: 15px; line-height: 1.45; color: var(--ink2); }
+  .step-text .note-line { display: block; margin-top: 3px; font-size: 14.5px; color: var(--said); overflow-wrap: anywhere; white-space: pre-wrap; }
+  .invite { margin-top: 12px; padding: 12px 14px; font-size: 15px; line-height: 1.45; color: var(--ink2); }
   .invite b { color: var(--ink); font-weight: 800; }
 
   /* ---------- footer / misc ---------- */
-  .house-rule { margin-top: 26px; padding: 0 12px; text-align: center; font-size: 13px; font-weight: 500; line-height: 1.5; color: var(--ink2); }
+  .house-rule { margin-top: 16px; padding: 0 12px; text-align: center; font-size: 12.5px; font-weight: 500; line-height: 1.5; color: var(--ink2); }
   .house-rule b { color: var(--ink); font-weight: 750; }
-  details.explain { margin-top: 18px; padding: 0 6px; }
+  details.explain { margin-top: 12px; padding: 0 6px; }
   details.explain summary { list-style: none; cursor: pointer; font-size: 14px; font-weight: 700; color: var(--ink2); }
   details.explain summary::-webkit-details-marker { display: none; }
   details.explain summary::before { content: "ⓘ "; }
   details.explain p { margin-top: 6px; font-size: 14px; line-height: 1.5; color: var(--ink2); }
   .toast {
-    position: fixed; left: 50%; bottom: calc(130px + env(safe-area-inset-bottom)); z-index: 60;
+    position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 60;
     transform: translateX(-50%) translateY(8px); padding: 11px 18px; border-radius: 999px; white-space: nowrap;
     background: var(--ink); color: var(--page); font-size: 14px; font-weight: 700;
     opacity: 0; pointer-events: none; transition: opacity 0.25s ease, transform 0.25s ease;
@@ -268,12 +280,13 @@
 
   /* a mouse needs less room than a thumb: tighter rows so a laptop screen fits a whole step */
   @media (pointer: fine) {
-    .cell { min-height: 46px; }
-    .opt-in { padding: 12px 0; }
-    .field { padding: 11px 0; }
-    .cell .l { padding-top: 12px; }
-    .choice { min-height: 46px; }
-    .cell.big .choice { min-height: 56px; }
+    .cell { min-height: 44px; }
+    .opt-in { padding: 11px 0; }
+    .field { padding: 10px 0; }
+    .cell .l { padding-top: 11px; }
+    .add-note { padding: 10px 0; }
+    .choice { min-height: 44px; }
+    .cell.big .choice { min-height: 52px; }
   }
   @media (prefers-reduced-motion: reduce) {
     * { animation: none !important; transition: none !important; }
@@ -922,6 +935,20 @@ const OPT_PLACEHOLDERS = ['that sushi place', 'the thai spot', 'tacos obviously'
 const tint = (i) => 't' + ((i % 5) + 1); // the pastel square behind each option's emoji
 const shown = (opt) => optLabel(opt) || opt; // an emoji-only option shows as its emoji
 const HIST_STATE = { sent: 'Sent. Waiting on their two.', cut: 'You kept two. Their call.', closed: 'Decided', done: 'Decided' };
+/* a note starts folded into its ✎ row so each step fits one screen; revealNote() unfolds it */
+const noteCell = (id, placeholder) => `
+  <div class="cell plain" hidden><label class="l" for="${id}">Note</label>
+    <textarea class="field note-in" id="${id}" maxlength="140" rows="1" autocomplete="off" placeholder="${esc(placeholder)}"></textarea></div>`;
+const addNoteBtn = (id, label) => `<button class="add-note" data-action="add-note" data-for="${id}">${label}</button>`;
+function revealNote(id, focus) {
+  const ta = $('#' + id);
+  if (!ta) return;
+  ta.closest('.cell').hidden = false;
+  const btn = document.querySelector(`[data-action="add-note"][data-for="${id}"]`);
+  if (btn) btn.hidden = true;
+  autosize(ta);
+  if (focus) ta.focus();
+}
 
 function renderHome() {
   setStage(5, 'compose');
@@ -954,17 +981,16 @@ function renderHome() {
         <button class="chip" data-action="chip-title" data-title="Date night">✨ Date night</button>
       </div>`)}
     <main class="body">
-      <div class="hdr">Your five</div>
+      <div class="hdr"><span>Your five</span>${composeCount < 6 ? '<button class="add-opt" data-action="add-option">+ a 6th, if you must</button>' : ''}</div>
       ${optSuggestList()}
       <div class="card">${optRows}</div>
-      <p class="ftr">Paste a numbered list and it fills all five. They keep two, you pick the winner.</p>
-      ${composeCount < 6 ? '<button class="add-opt" data-action="add-option">+ a 6th (that’s cheating, but fine)</button>' : ''}
+      <p class="ftr">Paste a numbered list to fill all five.</p>
       <div class="card gap">
-        <div class="cell plain"><label class="l" for="note-in">Note</label>
-          <textarea class="field note-in" id="note-in" maxlength="140" rows="1" autocomplete="off"
-                    placeholder="anything to tell them? “surprise me”"></textarea></div>
-        <div class="cell plain"><label class="l" for="name-in">From</label>
-          <input class="field" id="name-in" maxlength="24" autocomplete="off" placeholder="your name" value="${esc(name)}"></div>
+        ${noteCell('note-in', 'anything to tell them? “surprise me”')}
+        <div class="cell plain meta-row">
+          ${addNoteBtn('note-in', '✎ Add a note')}
+          <label class="from">from <input class="field" id="name-in" maxlength="24" autocomplete="off" placeholder="your name" value="${esc(name)}"></label>
+        </div>
       </div>
       <div class="form-error" id="form-error" role="alert"></div>
       <div id="compose-linkrow"></div>
@@ -991,7 +1017,7 @@ function renderHome() {
   }
   for (let i = 0; i < composeCount; i++) updateEmojiBtn(i);
   fitTitle();
-  document.querySelectorAll('textarea.note-in').forEach(autosize);
+  if ($('#note-in').value) revealNote('note-in');
   schedulePrepare();
 }
 
@@ -1001,6 +1027,7 @@ function renderCut(p) {
   keepSet = new Set();
   const myName = store.get('name', '');
   const forSelf = myName && myName === p.l;
+  const firstTime = !store.get('history', []).length;
   app.innerHTML = `
     ${band('2', `
       <div class="band-row">${steps(2)}${titlePill(p.t)}</div>
@@ -1024,16 +1051,16 @@ function renderCut(p) {
       </div>
       <p class="ftr" id="keep-counter">0 of 2 kept. Tap ✕ to rule one out.</p>
       <div class="card gap">
-        <div class="cell plain"><label class="l" for="cutter-name">From</label>
-          <input class="field" id="cutter-name" maxlength="24" autocomplete="off" placeholder="your name" value="${esc(forSelf ? '' : myName)}"></div>
-        <div class="cell plain"><label class="l" for="cut-note">Note</label>
-          <textarea class="field note-in" id="cut-note" maxlength="140" rows="1" autocomplete="off"
-                    placeholder="anything to say back? “this was hard”"></textarea></div>
+        ${noteCell('cut-note', 'anything to say back? “this was hard”')}
+        <div class="cell plain meta-row">
+          ${addNoteBtn('cut-note', '✎ Add a note back')}
+          <label class="from">from <input class="field" id="cutter-name" maxlength="24" autocomplete="off" placeholder="your name" value="${esc(forSelf ? '' : myName)}"></label>
+        </div>
       </div>
       <div id="cut-linkrow"></div>
-      <details class="explain"><summary>First time? How 5·2·1 works</summary>
+      ${firstTime ? `<details class="explain"><summary>First time? How 5·2·1 works</summary>
         <p>It's a tiny ritual for deciding as a pair: one person lists five options, the other keeps their favorite two, and the lister picks the winner from those. Be honest about what you want — no strategic picks, no guessing what they'd prefer. It works out in the end.</p>
-      </details>
+      </details>` : ''}
       ${houseRule}
     </main>
     ${bar(`
@@ -1089,7 +1116,7 @@ function renderDone(p) {
   const newcomer = !store.get('history', []).length && myName !== p.l && myName !== p.c;
   const did = (name, verb) => name ? `<b>${esc(name)}</b> ${verb}` : verb[0].toUpperCase() + verb.slice(1);
   const kept = Array.isArray(p.k) && p.k.length === 2 ? p.k.map((i) => shown(p.o[i])) : null;
-  const notes = [[p.l, p.n], [p.c, p.kn], [p.l, p.wn]].filter(([, text]) => text);
+  const said = (text) => text ? `<span class="note-line">“${esc(text)}”</span>` : ''; // each note sits on the step it was written at
   const size = wName.length > 22 ? ' xlong' : wName.length > 12 ? ' long' : '';
   app.innerHTML = `
     ${band('1', `
@@ -1100,13 +1127,11 @@ function renderDone(p) {
     <main class="body">
       ${newcomer ? '<div class="card invite"><b>New here?</b> 5·2·1 is how two people decide anything: one lists five, the other keeps two, the lister picks one.</div>' : ''}
       <div class="hdr">How it went</div>
-      <div class="card">
-        <div class="cell"><span class="ntile n5">5</span><span class="step-text">${did(p.l, 'listed')} ${countWord(p.o.length)}<small>${p.o.map((o) => esc(shown(o))).join(', ')}</small></span></div>
-        ${kept ? `<div class="cell"><span class="ntile n2">2</span><span class="step-text">${did(p.c, 'kept')} ${esc(kept[0])} and ${esc(kept[1])}</span></div>` : ''}
-        <div class="cell"><span class="ntile n1">1</span><span class="step-text">${did(p.l, 'picked')} ${esc(wName)}</span></div>
+      <div class="card round-note">
+        <div class="cell step-row"><span class="ntile n5">5</span><span class="step-text">${did(p.l, 'listed')} ${countWord(p.o.length)}<small>${p.o.map((o) => esc(shown(o))).join(', ')}</small>${said(p.n)}</span></div>
+        ${kept ? `<div class="cell step-row"><span class="ntile n2">2</span><span class="step-text">${did(p.c, 'kept')} ${esc(kept[0])} and ${esc(kept[1])}${said(p.kn)}</span></div>` : ''}
+        <div class="cell step-row"><span class="ntile n1">1</span><span class="step-text">${did(p.l, 'picked')} ${esc(wName)}${said(p.wn)}</span></div>
       </div>
-      ${notes.length ? `<div class="hdr">Notes</div><div class="card round-note">${notes.map(([name, text]) => `
-        <div class="cell plain note-row"><span class="who">${esc(name || 'Note')}</span><span class="said">${esc(text)}</span></div>`).join('')}</div>` : ''}
       ${houseRule}
     </main>
     ${bar(`<button class="btn" data-action="done-restart">${newcomer ? 'Start your own round' : 'Start a new round'}</button>`)}
@@ -1241,7 +1266,7 @@ async function afterShare(view, builtP, copiedP) {
   if (!copiedP) return;
   const copy = $('#cta2');
   if (await copiedP) { toast('Link copied. Paste it anywhere.'); if (copy) copy.textContent = 'Copied ✓'; }
-  else { toast('Copy blocked. Tap the link below to copy.'); if (copy) copy.textContent = 'Tap the link below to copy'; }
+  else toast('Copy blocked. Tap the link below to copy.');
 }
 
 function markKept(row, on) {
@@ -1304,9 +1329,8 @@ function pickFinal(btn) {
     confetti();
     $('#close-after').innerHTML = `
       <div class="card gap">
-        <div class="cell plain"><label class="l" for="close-note">Note</label>
-          <textarea class="field note-in" id="close-note" maxlength="140" rows="1" autocomplete="off"
-                    placeholder="a last word? “it was close”"></textarea></div>
+        ${noteCell('close-note', 'a last word? “it was close”')}
+        <div class="cell plain meta-row">${addNoteBtn('close-note', '✎ Add a last word')}</div>
       </div>`;
   }
   schedulePrepare();
@@ -1325,6 +1349,7 @@ app.addEventListener('click', (e) => {
   else if (act === 'compose-share' || act === 'cut-share' || act === 'close-share') share('copy');
   else if (act === 'toggle-keep') toggleKeep(el);
   else if (act === 'toggle-strike') toggleStrike(el);
+  else if (act === 'add-note') revealNote(el.dataset.for, true);
   else if (act === 'pick-final') pickFinal(el);
   else if (act === 'done-restart') { location.hash = ''; composeCount = 5; optEmoji = {}; route(); }
   else if (act === 'emoji-pick') { const i = Number(el.dataset.i); paletteFor === i ? closePalette() : openPalette(i); }
@@ -1363,7 +1388,7 @@ function restoreComposeValues(v) {
   v.opts.forEach((val, i) => { if ($('#opt' + i)) $('#opt' + i).value = val; });
   for (let i = 0; i < composeCount; i++) updateEmojiBtn(i);
   fitTitle();
-  document.querySelectorAll('textarea.note-in').forEach(autosize);
+  if (v.note) revealNote('note-in');
   schedulePrepare();
 }
 
@@ -1408,7 +1433,7 @@ function fitTitle() {
   const el = $('#title-in');
   if (!el) return;
   const n = (el.value || el.placeholder).length;
-  el.style.fontSize = n > 24 ? '26px' : n > 15 ? '32px' : '';
+  el.style.fontSize = n > 24 ? '24px' : n > 17 ? '29px' : '';
 }
 function autosize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
 /* as you type: the emoji button previews what the cut view will auto-guess, the draft saves,

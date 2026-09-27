@@ -15,6 +15,9 @@ async function run() {
   A('home renders brand', !!d.querySelector('.brand'));
   A('home has 5 option inputs', d.querySelectorAll('.opt-in').length === 5);
   A('compose wears the blue step band (5)', d.querySelector('#app').dataset.stage === '5' && !!d.querySelector('.band .giant'));
+  A('note starts folded into its ✎ row', d.querySelector('#note-in').closest('.cell').hidden === true);
+  d.querySelector('[data-action="add-note"][data-for="note-in"]').click();
+  A('✎ unfolds the note', d.querySelector('#note-in').closest('.cell').hidden === false);
 
   // --- paste a numbered list into option 1 ---
   const W = f.contentWindow;
