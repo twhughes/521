@@ -42,9 +42,9 @@ A round fits in about 200 characters, well under the length where iMessage start
 cutting links apart. So the text thread *is* the game board:
 
 ```
-You    https://tylerwhughes.com/521/#2FY2xCgIxEER_JWxjk8b2…              list 5
-Them   https://tylerwhughes.com/521/#2DY2xCgIxEER_JWxjk-aw…              keep 2
-You    🏆 Sushi Yasaka! https://tylerwhughes.com/521/#2DU49CwIxDP0r…     pick 1
+You    https://tylerwhughes.com/521/#2DY2xDgIxDEN_JcrchbUj4…               list 5
+Them   https://tylerwhughes.com/521/#2FY2xDsIwDER_xfKcpWLri…               keep 2
+You    🏆 Sushi bar! https://tylerwhughes.com/521/#2FY6xDsIwDER_xfK…       pick 1
 ```
 
 - **Nothing is stored anywhere.** Browsers never send the part after `#` to a server,
@@ -53,13 +53,13 @@ You    🏆 Sushi Yasaka! https://tylerwhughes.com/521/#2DU49CwIxDP0r…     pic
   **Send in Messages** opens Messages with it already filled in.
 - **Old links keep working.** Links from before compression still open.
 
-**Try it:** [this link](https://tylerwhughes.com/521/#2FY2xCgIxEER_JWxjk8b26itEEQRt5LBYw2pC4i5kc4Yg_rtrNTNvYOYDb5i2HhQmCGsDD83cnJipuiacnvEPi8HLKFTNC0wLHKVJTSyWz6vG5K6omNHiHoPcN-pOKeRCauRAj2SyQ3bzYNQ24OaBbVLlRT1SJdfJBes7lmy38P0B)
+**Try it:** [this link](https://tylerwhughes.com/521/#2DY2xDgIxDEN_JcrchbUj4gMQx4YYQhVdy7XpqU2pdIh_J5v9bNlf_KA_OVT0eEki3ECrpDUqOswGFyqmKvoHXtNxEOyZAhtaRo8JXtRM3ylU0DbCZuZGhQV6rLuZ82irbb5rEsWnQ7HJXgvPyI1hMgQSmJQ3u7V6tzgMxd8f)
 is a real round. You're the one keeping two.
 
 ## Small things
 
-- Every option gets an emoji, guessed by 122 rules (sushi 🍣, tacos 🌮, "Five Guys" 🍔)
-  and a hand-picked list of about 90 local spots. Tap it to choose your own.
+- Every option gets an emoji, guessed by 122 rules (sushi 🍣, tacos 🌮, "Five Guys" 🍔).
+  Tap it to choose your own.
 - Paste a numbered list into any row and it fills all five.
 - Tap ✕ to cross an option out while you think. That stays on your phone.
 - Each handoff can carry a short note: "somewhere we can walk to".
