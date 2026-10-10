@@ -38,7 +38,7 @@ keeps, the winner, and any notes) is packed into the link itself:
 round → JSON → deflate → base64url → everything after the #
 ```
 
-A round fits in about 200 characters (about 300 with movie scores), well under the
+A round fits in about 200 characters (about 330 with movie scores), well under the
 length where iMessage starts cutting links apart. So the text thread *is* the game board:
 
 ```
@@ -51,7 +51,7 @@ You    🏆 Sushi bar! https://tylerwhughes.com/521/#2FY6xDsIwDER_xfK…       p
   so a round never lands in a log. No accounts, no cookies, no analytics.
 - **Movie scores are the one outside lookup.** In a Watch round, the lister's phone
   looks each title up at Cinemeta (Stremio's free movie database) once you stop typing it.
-  The IMDb score and length then ride in the link, so the other phone asks no one.
+  The IMDb score, year and length then ride in the link, so the other phone asks no one.
   Food, Travel and Other rounds ask no one at all.
 - **Sending takes one tap.** The next link is built while you type, so
   **Send in Messages** opens Messages with it already filled in.
@@ -65,10 +65,10 @@ is a real round. You're the one keeping two.
 - Four modes: 🍽️ Food, 🍿 Watch, ✈️ Travel and ✨ Other. The title picks one
   ("Movie night" is Watch, "Weekend trip" is Travel). Tap the pill to change it.
 - Every option gets an emoji: 122 rules for food and outings (sushi 🍣, tacos 🌮,
-  "Five Guys" 🍔), flags for trips (Lisbon 🇵🇹), genres for films (Inception 🚀).
-  Tap it to choose your own.
-- Watch rounds show each title's IMDb score and length where the Maps button
-  would be: ★ 8.8 over 2h 28m.
+  "Five Guys" 🍔), flags for trips (Lisbon 🇵🇹), and for films a word in the title
+  (Jaws 🦈, Squid Game 🦑) or else the genre (Inception 🚀). Tap it to choose your own.
+- Watch rounds show each title's IMDb score, year and length where the Maps
+  button would be: ★ 8.8 over 2010 · 2h 28m.
 - Paste a numbered list into any row and it fills all five.
 - Tap ✕ to cross an option out while you think. That stays on your phone.
 - Each handoff can carry a short note: "somewhere we can walk to".
@@ -85,7 +85,7 @@ It works out in the end.
 
 ```sh
 ./run.sh     # serves http://localhost:8521
-./test.sh    # headless Chrome plays a round in every mode: 102 checks
+./test.sh    # headless Chrome plays a round in every mode: 113 checks
 ```
 
 One `index.html`: no build step, no framework, no dependencies to install.

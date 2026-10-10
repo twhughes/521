@@ -324,7 +324,8 @@
      { v:1, s:'cut'|'close'|'done', t:title, l:lister, c:cutter,
        o:[options], k:[keptIdx,keptIdx], w:winnerIdx,
        m:mode ('w' watch | 't' travel | 'o' other; absent = food),
-       x:[facts per option — Watch only: [imdbId, score×10, minutes(, seasons)] or 0] }
+       x:[facts per option — Watch only: [imdbId, score×10, minutes(, seasons)] or 0],
+       y:[release year per option — Watch only, beside x: a year or 0] }
    s:'draft' is a local-only fourth stage: it seeds the compose
    form (t/o/n) and never travels between players — used by
    deep links from dictation tools on the lister's own device.
@@ -567,7 +568,7 @@ const typeHint = (t) => /\b(movies?|films?|cinema|flicks?)\b/i.test(t || '') ? '
    its signature (Vegas 🎰, Napa 🍷), then a kind of trip (cabin 🌲, lake 🏞️). Most specific line
    first ("Portland, Maine" is lobster before Portland is coffee). Two letters = a flag. Matched
    on accent-free lowercase, so "Montréal" and "montreal" both land. */
-const TRAVEL_PLACES = `
+const TRAVEL_PLACES = emojiTable(`
 🎰 vegas|las vegas|atlantic city
 🌺 hawaii|maui|oahu|kauai|honolulu|big island
 🎢 disney|disneyland|disney world|orlando|universal studios
@@ -670,14 +671,20 @@ uy uruguay|montevideo
 🏙️ city|city break|big city
 🏖️ beach|beach town|beach house|coast|seaside
 🚗 road trip|roadtrip|drive
-`.trim().split('\n').map((line) => {
-  const sp = line.indexOf(' ');
-  const head = line.slice(0, sp);
-  const names = line.slice(sp + 1).split('|');
-  const e = /^[a-z]{2}$/.test(head) ? String.fromCodePoint(...[...head.toUpperCase()].map((c) => 0x1F1A5 + c.charCodeAt(0))) : head;
-  return { e, names, re: new RegExp('\\b(' + names.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\b') };
-});
-const placeNorm = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+`);
+/* an emoji table: one line per emoji, "<emoji, or two letters for a flag> name|name…", each name
+   a whole word or phrase; the first line that names something in the text wins */
+function emojiTable(src) {
+  return src.trim().split('\n').map((line) => {
+    const sp = line.indexOf(' ');
+    const head = line.slice(0, sp);
+    const names = line.slice(sp + 1).split('|');
+    const e = /^[a-z]{2}$/.test(head) ? String.fromCodePoint(...[...head.toUpperCase()].map((c) => 0x1F1A5 + c.charCodeAt(0))) : head;
+    return { e, names, re: new RegExp('\\b(' + names.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\b') };
+  });
+}
+const tableEmoji = (table, text) => { const n = wordNorm(text); return table.find(({ re }) => re.test(n))?.e || null; };
+const wordNorm = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
   .replace(/[’‘]/g, "'").replace(/\./g, '').replace(/\s+/g, ' ');
 
 /* Watch: a title's emoji comes from its genres. IMDb lists them alphabetically, so this order —
@@ -692,6 +699,190 @@ const GENRE_EMOJI = [
 ];
 const genreEmoji = (genres, series) =>
   (GENRE_EMOJI.find(([g]) => (genres || []).includes(g)) || [, series ? '📺' : '🎬'])[1];
+/* Watch: a word in the title that names a thing beats the genre — "The Crazy Chicken" is 🐔,
+   "Squid Game" 🦑, "Jaws" 🦈 — and costs the link nothing, since both phones read it from the
+   text. Only words a title clearly shows (never "love", "night", "game" or "time"). Most specific
+   line first: "The Lion King" is 🦁 before 👑, "House of Cards" 🃏 before 🏠, "Murder on the
+   Orient Express" 🚆 before 🔪, "ice cream" 🍦 before ❄️. */
+const WATCH_WORDS = emojiTable(`
+💋 rocky horror
+🏈 football|nfl|quarterback|super bowl
+⚽ soccer|ted lasso|beckham|world cup|premier league
+⚾ baseball|moneyball|a league of their own|bull durham
+🏀 basketball|nba|hoop|hoops|hoop dreams|space jam
+⛳ golf|golfer|caddyshack
+🎾 tennis|wimbledon|king richard
+🥊 boxing|boxer|rocky|creed|fight|fights|fighter|fighters|raging bull|million dollar baby
+🥋 karate|karate kid|cobra kai|kung fu hustle
+🏒 hockey|mighty ducks
+🏄 surf|surfing|surfer|surfers
+⛷️ ski|skiing|skier
+🏹 hunger games|arrow|archery
+♟️ chess|gambit|checkmate
+🌴 jungle book|jungle cruise
+🦈 shark|sharks|jaws|sharknado
+🦖 dinosaur|dinosaurs|dino|jurassic|godzilla|t-rex
+🦍 kong|gorilla|gorillas|ape|apes
+🐵 monkey|monkeys|chimp|chimps|chimpanzee
+🐔 chicken|chickens|hen|hens|rooster|roosters
+🐶 dog|dogs|puppy|puppies|pup|pups|lassie|scooby|scooby-doo
+🐱 cat|cats|kitten|kittens|kitty|garfield
+🐭 mouse|mice|stuart little
+🐀 rat|rats|ratatouille
+🐰 rabbit|rabbits|bunny|bunnies|hare
+🐻 bear|bears|paddington|pooh|teddy
+🐼 panda|pandas
+🦁 lion|lions
+🐯 tiger|tigers
+🐺 wolf|wolves|werewolf|werewolves|wolfman
+🦊 fox|foxes
+🐴 horse|horses|horseman|pony|ponies|stallion|seabiscuit
+🐂 bull|bulls
+🐮 cow|cows|cattle
+🐷 pig|pigs|piglet|peppa
+🐑 sheep|lamb|lambs
+🐐 goat|goats
+🦌 deer|reindeer|bambi|elk|moose
+🐘 elephant|elephants|dumbo
+🐊 crocodile|crocodiles|alligator|alligators|croc
+🐢 turtle|turtles|tortoise
+🐍 snake|snakes|cobra|anaconda|viper|vipers
+🐸 frog|frogs|kermit|muppet|muppets
+🦂 scorpion|scorpions
+🕷️ spider|spiders|spider-man|spiderman|spider-verse
+🐜 ant|ants|ant-man
+🐝 bee|bees|bumblebee|beekeeper
+🦋 butterfly|butterflies|caterpillar
+🦇 bat|bats|batman
+🦉 owl|owls
+🦅 eagle|eagles|falcon
+🦆 duck|ducks|duckling|daffy
+🐧 penguin|penguins|happy feet
+🦢 swan|swans
+🐦 bird|birds|birdman|mockingbird|crow|crows|raven|ravens|parrot|parrots|pigeon|pigeons
+🐙 octopus
+🦑 squid
+🦀 crab|crabs
+🦞 lobster|lobsters
+🐋 whale|whales|moby dick|free willy|orca|orcas
+🐬 dolphin|dolphins|flipper
+🐠 nemo|dory|goldfish
+🐟 fish|fishes|fishing|catfish|piranha
+🦄 unicorn|unicorns
+🐉 dragon|dragons|dragonheart
+👻 ghost|ghosts|ghostbusters|haunting|haunted|poltergeist|casper|spirit|spirits|spirited away
+🧟 zombie|zombies|zombieland|walking dead|living dead|of the dead|undead|santa clarita
+🧛 vampire|vampires|dracula|nosferatu
+🧙 witch|witches|witcher|wizard|wizards|harry potter|hogwarts|sorcerer|merlin
+🧜‍♀️ mermaid|mermaids
+👸 princess|princesses|cinderella|rapunzel|snow white
+👽 alien|aliens|ufo|ufos|extraterrestrial
+🤖 robot|robots|robocop|terminator|transformers|android|androids|cyborg|wall-e|m3gan
+👹 monster|monsters|ogre|shrek
+🏴‍☠️ pirate|pirates
+🥷 ninja|ninjas
+🤠 cowboy|cowboys|sheriff|outlaw|outlaws|yellowstone|django
+🕵️ spy|spies|sherlock|detective|detectives
+🚓 cop|cops|police|police academy
+⚖️ lawyer|lawyers|law & order|law and order|courtroom|judge|trial|attorney|jury
+🏥 hospital|nurse|nurses|surgeon|surgeons|scrubs|grey's anatomy
+🧑‍🍳 chef|chefs|cook|cooks|cooking|kitchen|restaurant|diner|bake off|baking
+👑 king|kings|queen|queens|prince|crown|throne|thrones|royal|royals|emperor|empress|bridgerton
+💒 wedding|weddings|bride|brides|bridesmaids|groom|honeymoon
+🎄 christmas|xmas|santa|grinch|elf|elves|nutcracker
+🎃 halloween|pumpkin|pumpkins|hocus pocus
+😈 devil|devils|demon|demons|hell|satan|exorcist|lucifer
+😇 angel|angels|heaven
+🤡 clown|clowns|joker
+🎪 circus|carnival|greatest showman
+💀 death|skull|skulls|skeleton|skeletons
+🏎️ racing|racer|race car|ferrari|nascar|formula 1|formula one|f1|grand prix|drive to survive|furious|days of thunder
+🚕 taxi|taxis|cab|cabs|uber
+🚆 train|trains|railway|railroad|orient express|bullet train|snowpiercer|polar express
+✈️ plane|planes|airplane|airport|flight|flights|top gun
+🚢 ship|ships|boat|boats|titanic|yacht|cruise|sailor|sailors|sailing|navy|battleship|below deck|submarine
+🚀 rocket|rockets|rocketman|astronaut|astronauts|apollo|nasa|spaceship|spaceships|starship|starships
+🚗 car|cars|drive|driver|drivers|driving|road trip|roadtrip|highway|truck|trucks
+🏍️ motorcycle|motorcycles|biker|bikers
+🚲 bike|bikes|bicycle|bicycles|cycling
+🔫 gun|guns|gunfight|shooter|sniper|bullet|bullets|pistol
+🔪 murder|murders|murderer|murderers|kill|kills|killer|killers|killing|knife|knives|slasher|scream
+🩸 blood|bloody|bloodline
+💣 bomb|bombs|bombshell|explosion
+🃏 card|cards|poker|gambler|gambling|house of cards
+🎰 casino|casinos|vegas|jackpot
+💰 money|heist|heists|bank|robbery|millionaire|millionaires|billion|billions|billionaire|rich|dollar|dollars
+💎 diamond|diamonds|gem|gems|jewel|jewels|jewelry
+⛓️ prison|prisoner|prisoners|jail|jailbreak|alcatraz|shawshank
+🏨 hotel|hotels|motel|motels|resort|inn|white lotus
+🏰 castle|castles|palace|palaces
+🎸 guitar|guitars|guitarist|rock and roll|rockstar|rock star|school of rock
+🎹 piano|pianist
+🎷 jazz|saxophone
+🥁 drum|drums|drummer|whiplash
+🎤 sing|singing|singer|singers|singin|song|songs|karaoke|idol|the voice|rap|rapper|rappers|hip hop|hip-hop|eurovision
+💃 dance|dances|dancing|dancer|dancers|ballet|ballerina|footloose|step up|disco
+🏫 school|schools|college|teacher|teachers|elementary|high school|academy|university|campus
+🏢 office|offices
+🏠 house|houses|home|homes|homeward|full house
+📚 book|books|library|librarian|bookstore|bookshop|novel
+🧸 toy|toys
+🎮 video game|video games|gamer|gamers|minecraft|mario|zelda|pokemon|pikachu|tetris|pac-man|arcade|sonic
+📱 phone|phones|smartphone|iphone|social network|selfie
+💻 computer|computers|hacker|hackers|hacking|internet|silicon valley
+🍕 pizza|pizzas|pizzeria
+🍔 burger|burgers|hamburger|cheeseburger
+🌮 taco|tacos|burrito|burritos
+🍣 sushi
+🍜 ramen|noodle|noodles|pho
+🍝 pasta|spaghetti|meatball|meatballs
+🍫 chocolate|chocolates|wonka
+🍦 ice cream|gelato
+🍩 donut|donuts|doughnut|doughnuts
+🍪 cookie|cookies
+🍬 candy|sweets|lollipop
+🎂 cake|cakes|cupcake|cupcakes|birthday
+🥧 pie|pies
+☕ coffee|cafe|espresso|latte
+🍵 tea
+🍷 wine|vineyard|sideways
+🍺 beer|beers|brewery|pub
+🥃 whiskey|whisky|bourbon
+🍸 cocktail|cocktails|martini
+🧀 cheese
+🍳 breakfast|brunch|pancake|pancakes|waffle|waffles
+🍎 apple|apples
+🍊 orange|oranges
+🍋 lemon|lemons|lemonade
+🍑 peach|peaches
+🍒 cherry|cherries
+🍓 strawberry|strawberries
+🍇 grape|grapes
+🍍 pineapple
+🍌 banana|bananas
+🍅 tomato|tomatoes
+🍿 popcorn
+🏝️ island|islands|isle|cast away|castaway
+🏖️ beach|beaches|baywatch|lagoon
+🌊 sea|seas|oceans|wave|waves|tsunami
+🏔️ mountain|mountains|everest|alps|summit|cliffhanger
+🏜️ desert|deserts|dune|dunes|sahara|mad max|fury road
+🌴 jungle|jungles|rainforest|tropic|tropical|tarzan|jumanji
+🌲 woods|forest|forests|wilderness|camping|campfire
+🌸 flower|flowers|blossom|blossoms|bloom|rose|roses|garden|gardens|lotus
+🌳 tree|trees
+🔥 fire|fires|flame|flames|burn|burning|inferno|blaze|firefighter|firefighters
+❄️ snow|snowman|snowy|frozen|ice|winter|blizzard|arctic|antarctica|polar
+⛈️ storm|storms|thunder|thunderstorm|lightning|hurricane
+🌪️ twister|twisters|tornado|tornadoes
+🌧️ rain|rainy
+🌈 rainbow|rainbows
+☀️ sun|sunny|sunshine|summer|summers|sunrise|sunset
+🌙 moon|moons|moonlight|moonrise|moonstruck|lunar
+⭐ star|stars|starstruck|superstar|stardust
+🌌 galaxy|galaxies|universe|cosmos|space|interstellar
+🌍 planet|planets|earth
+`);
 /* plain Google Maps search deep link — no API, no key; iOS opens the Maps app */
 const mapsUrl = (name) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(name);
 /* ---------- rendered map with numbered pins (Leaflet + OSM tiles) ----------
@@ -805,11 +996,9 @@ const optName = (opt) => splitEmoji(opt).rest || opt;     // what geocoders / Ma
 function emojiFor(text, i, mode = 'f') {
   const lead = splitEmoji(text).e;
   if (lead) return lead;
-  if (mode === 't') {
-    const n = placeNorm(text);
-    for (const { re, e } of TRAVEL_PLACES) if (re.test(n)) return e;
-  }
-  // a film title is just a name — "Fight Club" is no sandwich — so Watch skips the word rules
+  const named = mode === 't' ? tableEmoji(TRAVEL_PLACES, text) : mode === 'w' ? tableEmoji(WATCH_WORDS, text) : null;
+  if (named) return named;
+  // a film title is just a name — "Fight Club" is no sandwich — so Watch reads only its own words
   if (mode !== 'w') for (const [re, e] of EMOJI_RULES) if (re.test(text)) return e;
   const fb = (MODES[mode] || MODES.f).fallback;
   return fb[i % fb.length];
@@ -1042,8 +1231,9 @@ function optSuggestList() { // native autocomplete over your own past option nam
    public page can't keep. Cinemeta, Stremio's free public movie database, is keyless, allows
    browser calls, and reports IMDb's score, the runtime, the genres and the seasons. Only the
    LISTER's phone asks, only in Watch mode, and only once a title stops changing (a pause, or
-   leaving the row) — half-typed words never go out. The facts then ride in the link (`x`), so
-   the other phone asks no one. Each title is asked once, then remembered on this phone. */
+   leaving the row) — half-typed words never go out. The facts then ride in the link (`x`, and
+   the years in `y`), so the other phone asks no one. Each title is asked once, then remembered
+   on this phone. */
 const CINEMETA = 'https://v3-cinemeta.strem.io';
 const LOOKUP_PAUSE = 1000; // ms without typing before a title counts as finished
 const watch = { cache: store.get('watchCache', {}), pending: new Map(), timers: {}, hint: '' };
@@ -1110,9 +1300,12 @@ function factsFromMeta(m) {
     minutes: clampInt(parseRuntime(m.runtime), 5000),
     seasons: series ? clampInt(new Set((m.videos || []).map((v) => v.season).filter((s) => Number.isInteger(s) && s > 0)).size, 500) : 0,
     genre: genreEmoji(m.genre || m.genres, series),
-    year: String(m.releaseInfo || m.year || '').slice(0, 4),
+    year: yearOk(Number((String(m.releaseInfo || m.year || '').match(/\d{4}/) || [0])[0])), // a show: its first year
   };
 }
+/* a release year as a link may carry it: 1870–2100, else 0 */
+const yearOk = (y) => (Number.isInteger(y) && y >= 1870 && y <= 2100 ? y : 0);
+const factYear = (f) => yearOk(Number(f.year)); // older caches kept the year as text
 const packFacts = (f) => f.series ? [f.id, f.score, f.minutes, f.seasons] : [f.id, f.score, f.minutes];
 /* the receiving side trusts nothing it decodes: numbers only, in range, or no facts at all */
 function factsAt(p, i) {
@@ -1120,7 +1313,8 @@ function factsAt(p, i) {
   if (!Array.isArray(f) || f.length < 3 || f.length > 4 || !f.every((n) => Number.isInteger(n) && n >= 0)) return null;
   const [id, score, minutes, seasons = 0] = f;
   if (!id || id > 1e9 || score > 100 || minutes > 5000 || seasons > 500) return null;
-  return { id, score, minutes, seasons, series: f.length === 4 };
+  const year = Array.isArray(p.y) ? yearOk(p.y[i]) : 0; // links from before the year have no y
+  return { id, score, minutes, seasons, series: f.length === 4, year };
 }
 const imdbTitleUrl = (id) => 'https://www.imdb.com/title/tt' + String(id).padStart(7, '0') + '/';
 const imdbFindUrl = (name) => 'https://www.imdb.com/find/?q=' + encodeURIComponent(name);
@@ -1131,14 +1325,14 @@ function fmtLength(f) {
   const h = Math.floor(f.minutes / 60), m = f.minutes % 60;
   return h ? h + 'h' + (m ? ' ' + m + 'm' : '') : m + 'm';
 }
-/* the score over the length; while you compose, over the year instead, so a wrong "Dune" shows */
-function factsHTML(f, name, compose) {
-  const under = compose ? (f.year || fmtLength(f)) : fmtLength(f);
-  const said = [fmtScore(f).replace('★', 'scored'), under].filter(Boolean).join(', ');
+/* the score over the year and length, the same on every screen */
+function factsHTML(f, name) {
+  const under = [factYear(f), fmtLength(f)].filter(Boolean).join(' · ');
+  const said = [fmtScore(f).replace('★', 'scored'), factYear(f), fmtLength(f)].filter(Boolean).join(', ');
   return `<a class="facts" href="${imdbTitleUrl(f.id)}" target="_blank" rel="noopener" aria-label="${esc(name)} on IMDb${said ? ': ' + esc(said) : ''}">${esc(fmtScore(f) || 'IMDb')}${under ? `<small>${esc(under)}</small>` : ''}</a>`;
 }
-/* the ↗ beside each option: Maps for places; IMDb for titles — the score + length when the
-   lister's phone found them, a plain IMDb search when it didn't; nothing at all for Other */
+/* the ↗ beside each option: Maps for places; IMDb for titles — the score, year + length when
+   the lister's phone found them, a plain IMDb search when it didn't; nothing at all for Other */
 function linkSlot(p, i, mode) {
   const name = optName(p.o[i]);
   const link = MODES[mode].link;
@@ -1153,7 +1347,7 @@ function winnerLink(p, mode) {
   if (link === 'maps') return `<button class="chip maps" data-action="show-map" data-i="${p.w}">${MAP_ICON} Open in Maps</button>`;
   if (link !== 'imdb') return '';
   const f = factsAt(p, p.w);
-  const bits = f ? [fmtScore(f), fmtLength(f)].filter(Boolean).join(' · ') : '';
+  const bits = f ? [fmtScore(f), factYear(f), fmtLength(f)].filter(Boolean).join(' · ') : '';
   return `<a class="chip maps" href="${f ? imdbTitleUrl(f.id) : imdbFindUrl(optName(p.o[p.w]))}" target="_blank" rel="noopener">${MAP_ICON} IMDb${bits ? ' · ' + esc(bits) : ''}</a>`;
 }
 /* compose: a row's lookup waits for a pause in typing, or runs at once when you leave the row */
@@ -1184,7 +1378,7 @@ function updateFactsUI(i) {
   if (!slot) return;
   const text = $('#opt' + i)?.value.trim() || '';
   const f = roundMode === 'w' && text ? cachedFacts(text, typeHint($('#title-in')?.value)) : null;
-  slot.innerHTML = f ? factsHTML(f, optName(text), true) : '';
+  slot.innerHTML = f ? factsHTML(f, optName(text)) : '';
 }
 
 /* ---------- confetti ---------- */
@@ -1526,7 +1720,7 @@ function readCompose() {
   const note = $('#note-in')?.value.trim() ?? '';
   const mode = roundMode;
   const hint = typeHint(title);
-  const opts = [], facts = [];
+  const opts = [], facts = [], years = [];
   for (let i = 0; i < composeCount; i++) {
     const v = $('#opt' + i)?.value.trim() ?? '';
     let e = optEmoji[i] || (v ? autoEmoji(i, v) : null);
@@ -1536,6 +1730,7 @@ function readCompose() {
     else continue;
     const f = mode === 'w' && v ? cachedFacts(v, hint) : null;
     facts.push(f ? packFacts(f) : 0); // aligned with o: 0 = nothing found (yet)
+    years.push(f ? factYear(f) : 0);
   }
   if (opts.length < 3) return { error: 'Give them at least 3 options (5 is the ritual).' };
   const lower = opts.map((o) => o.toLowerCase());
@@ -1543,6 +1738,7 @@ function readCompose() {
   const payload = { v: 1, s: 'cut', t: title, l: name, o: opts };
   if (mode !== 'f') payload.m = mode;               // Food is the default: older links have no mode
   if (facts.some(Array.isArray)) payload.x = facts; // Watch only, once something was found
+  if (years.some(Boolean)) payload.y = years;
   if (note) payload.n = note; // keep the field out of the URL entirely when unused
   return { payload, title, name };
 }
@@ -1766,14 +1962,15 @@ function restoreComposeValues(v) {
 /* ---------- compose emoji picker ---------- */
 function emojiBtnFor(i) { return $('#opt' + i)?.closest('.opt-row')?.querySelector('.emoji-btn'); }
 /* an emoji this phone fills in by itself, beyond the shared guesser: your own past pick for this
-   name, or in Watch the genre of the title it found. Worked out from the text every time, never
+   name, or in Watch the genre of the title it found — unless a word in the title names a thing
+   (WATCH_WORDS), which the shared guesser already shows. Worked out from the text every time, never
    stored, so it follows the text — clear the row and it's gone, instead of lingering as a lone
    emoji option. A row whose palette you opened stops getting the memory; the genre is the app's
    own guess, so "auto" in the palette brings it back. */
 function autoEmoji(i, v) {
   if (splitEmoji(v).e) return null;
   return (!emojiTouched.has(i) && rememberedEmoji(v))
-    || (roundMode === 'w' && cachedFacts(v, typeHint($('#title-in')?.value))?.genre) || null;
+    || (roundMode === 'w' && !tableEmoji(WATCH_WORDS, v) && cachedFacts(v, typeHint($('#title-in')?.value))?.genre) || null;
 }
 function updateEmojiBtn(i) {
   const btn = emojiBtnFor(i);

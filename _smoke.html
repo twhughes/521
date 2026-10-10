@@ -22,6 +22,8 @@ const CANNED = {
   'meta/movie/tt13238346.json': { meta: { imdb_id: 'tt13238346', name: 'Past Lives', imdbRating: '7.8', runtime: '105 min', genre: ['Drama', 'Romance'], popularity: 1.1, releaseInfo: '2023' } },
   'catalog/series/top/search=Severance.json': { metas: [{ id: 'tt11280740', imdb_id: 'tt11280740', name: 'Severance', releaseInfo: '2022-' }] },
   'meta/series/tt11280740.json': { meta: { imdb_id: 'tt11280740', name: 'Severance', imdbRating: '8.7', runtime: '55 min', genre: ['Drama', 'Mystery', 'Sci-Fi'], popularity: 2.5, releaseInfo: '2022–', videos: [1, 2].map((season) => ({ season })) } },
+  'catalog/series/top/search=The%20Bear.json': { metas: [{ id: 'tt14452776', imdb_id: 'tt14452776', name: 'The Bear', releaseInfo: '2022-' }] },
+  'meta/series/tt14452776.json': { meta: { imdb_id: 'tt14452776', name: 'The Bear', imdbRating: '8.5', runtime: '34 min', genre: ['Comedy', 'Drama'], popularity: 2.2, releaseInfo: '2022–', videos: [1, 2, 3, 4].map((season) => ({ season })) } },
 };
 function fakeCinemeta(w) {
   const calls = [];
@@ -237,7 +239,7 @@ async function run() {
   await sleep(1500); // the typing pause passes
   A('a finished title is looked up', calls.some((c) => c.includes('search=Inception.json')));
   A('nothing half-typed ever went out', !calls.some((c) => c.includes('Incep.json')));
-  A('compose shows the score over the year', facts(0).includes('★ 8.8') && facts(0).includes('2010'));
+  A('compose shows the score over the year and length', facts(0).includes('★ 8.8') && facts(0).includes('2010 · 2h 28m'));
   A('the genre picks the emoji (sci-fi 🚀)', tile(0) === '🚀');
   type('#opt1', 'Fargo'); leave('#opt1');
   type('#opt2', 'Past Lives'); leave('#opt2');
@@ -245,10 +247,10 @@ async function run() {
   type('#opt4', 'zzqx not a film'); leave('#opt4');
   await sleep(600);
   A('leaving a row looks it up at once', facts(2).includes('★ 7.8'));
-  A('movie night finds Fargo the film', facts(1).includes('1996'));
+  A('movie night finds Fargo the film', facts(1).includes('1996 · 1h 38m'));
   type('#title-in', 'Next show');
   await sleep(1500);
-  A('a show title asks again: Fargo the series', facts(1).includes('2014') && tile(1) === '🕵️');
+  A('a show title asks again: Fargo the series', facts(1).includes('2014 · 5 seasons') && tile(1) === '🕵️');
   A('no match shows no score', !d.querySelector('#ofacts4 .facts'));
   d.querySelector('#name-in').value = 'Sam';
   d.querySelector('[data-action="compose-share"]').click();
@@ -258,6 +260,7 @@ async function run() {
   A('the mode rides in the link', wp.m === 'w');
   A('the facts ride in the link, one per option', JSON.stringify(wp.x) ===
     JSON.stringify([[1375666, 88, 148], [2802850, 88, 52, 5], [13238346, 78, 105], [11280740, 87, 55, 2], 0]));
+  A('the years ride beside them (a show: its first year)', JSON.stringify(wp.y) === JSON.stringify([2010, 2014, 2023, 2022, 0]));
   A('genre emoji ride in the option text', wp.o[0] === '🚀 Inception' && wp.o[1] === '🕵️ Fargo' && wp.o[4] === 'zzqx not a film');
 
   calls.length = 0;
@@ -268,8 +271,8 @@ async function run() {
   A('watch cut: no Maps buttons', d.querySelectorAll('.choices .mapbtn').length === 0);
   A('watch cut: every found title shows its facts', rowFacts.length === 4);
   A('the score links to the IMDb title page', rowFacts[0]?.getAttribute('href') === 'https://www.imdb.com/title/tt1375666/');
-  A('a film shows its runtime', rowFacts[0]?.textContent.includes('★ 8.8') && rowFacts[0]?.textContent.includes('2h 28m'));
-  A('a show shows its seasons', rowFacts[1]?.textContent.includes('5 seasons'));
+  A('a film shows its year and runtime', rowFacts[0]?.textContent.includes('★ 8.8') && rowFacts[0]?.textContent.includes('2010 · 2h 28m'));
+  A('a show shows its first year and seasons', rowFacts[1]?.textContent.includes('2014 · 5 seasons'));
   A('an unfound title gets an IMDb search ↗', d.querySelector('.choices .imdbbtn')?.getAttribute('href') === 'https://www.imdb.com/find/?q=zzqx%20not%20a%20film');
   A('the receiving phone shows the genre emoji', [...d.querySelectorAll('.choices .emoji')].slice(0, 4).map((e) => e.textContent).join('') === '🚀🕵️💕🚀');
   A('the title pill shows what you watch', (d.querySelector('.band .pill')?.textContent || '').startsWith('📺'));
@@ -294,8 +297,20 @@ async function run() {
   d = f.contentDocument;
   const winChip = d.querySelector('.band a.chip');
   A('the watch winner links to IMDb with its facts', winChip?.getAttribute('href') === 'https://www.imdb.com/title/tt2802850/' &&
-    winChip.textContent.includes('★ 8.8') && winChip.textContent.includes('5 seasons'));
+    winChip.textContent.includes('★ 8.8 · 2014 · 5 seasons'));
   A('after compose, the round asked no one', calls.length === 0);
+  const cutAt = async (payload) => {
+    Wm.location.href = watchCut.split('#')[0] + '#' + await Wm.encodePayload(payload);
+    await sleep(400);
+    d = f.contentDocument;
+    return [...d.querySelectorAll('.choices .facts')].map((e) => e.textContent).join(' | ');
+  };
+  const legacy = { ...wp };
+  delete legacy.y;
+  const legacyFacts = await cutAt(legacy);
+  A('a link from before the year still shows score and length', legacyFacts.includes('★ 8.8') && legacyFacts.includes('2h 28m') && !legacyFacts.includes('2010'));
+  const junkFacts = await cutAt({ ...wp, y: ['2010', 99999, -1, 1999] });
+  A('only real years show', !junkFacts.includes('2010') && !junkFacts.includes('99999') && junkFacts.includes('1999 · 2 seasons'));
   log.push(`LEN watch cut=${watchCut.length} close=${watchClose.length} done=${watchDone.length}`);
 
   // --- back on compose: one fresh round per mode ---
@@ -355,6 +370,29 @@ async function run() {
   d = f.contentDocument;
   A('other has no ↗ buttons', !d.querySelector('.choices .mapbtn, .choices .imdbbtn, .choices .facts'));
   A('food, travel and other rounds ask no outside service', calls.length === 0);
+
+  // Watch: a word in the title that names a thing beats the genre, and costs the link nothing
+  await freshCompose();
+  type('#title-in', 'Next show');
+  ['The Bear', 'The Crazy Chicken', 'Squid Game', 'Fight Club', 'Inception'].forEach((o, i) => { type('#opt' + i, o); leave('#opt' + i); });
+  await sleep(600);
+  A('the lookup still found The Bear (a comedy, 😂)', facts(0).includes('★ 8.5') && facts(0).includes('4 seasons'));
+  A('a word in the title beats the genre: 🐻, not 😂', tile(0) === '🐻');
+  A('a word needs no lookup: 🐔 🦑 🥊 (no sandwich)', tile(1) === '🐔' && tile(2) === '🦑' && tile(3) === '🥊');
+  A('no word in the title, so the genre stays: 🚀', tile(4) === '🚀');
+  d.querySelector('[data-action="compose-share"]').click();
+  await sleep(400);
+  const wordCut = d.querySelector('#compose-linkrow #share-url')?.dataset.url || '';
+  const wwp = await Wm.decodePayload(wordCut.split('#')[1]);
+  A('a word emoji costs the link nothing', wwp.o[0] === 'The Bear' && wwp.o[1] === 'The Crazy Chicken' && wwp.o[4] === '🚀 Inception');
+  Wm.location.href = wordCut;
+  await sleep(400);
+  d = f.contentDocument;
+  A('the other phone reads the same words', [...d.querySelectorAll('.choices .emoji')].map((e) => e.textContent).join('') === '🐻🐔🦑🥊🚀');
+  const wf = (t) => Wm.emojiFor(t, 0, 'w');
+  A('the most specific word wins', wf('The Lion King') === '🦁' && wf('House of Cards') === '🃏' && wf('King Kong') === '🦍' &&
+    wf('The Queen’s Gambit') === '♟️' && wf('Ice Cream Man') === '🍦' && wf('Murder on the Orient Express') === '🚆');
+  A('only whole words count', wf('Homeland') === '🎬' && wf('Anatomy of a Fall') === '🎬');
 
   // a mode picked on the pill survives a reload, with the rest of the draft
   await freshCompose();
