@@ -107,7 +107,14 @@
   /* one row that scrolls sideways, bleeding to the band's edges, instead of wrapping onto a second line */
   .chips { display: flex; gap: 6px; margin: 10px -22px 0; padding: 0 22px; overflow-x: auto; scrollbar-width: none; }
   /* the chips only start a title: once there is one they fold away and give the screen back */
-  .band:has(.title-in:not(:placeholder-shown)) .chips { display: none; }
+  .band:has(.title-in:not(:placeholder-shown)) .title-chips { display: none; }
+  /* the mode pill (top right, where the title pill sits on the other steps) opens the mode chips in the title chips' place */
+  .mode-pill { flex: none; border: 0; cursor: pointer; }
+  .mode-chips { display: none; }
+  .band.mode-open .mode-chips { display: flex; }
+  .band.mode-open .title-chips { display: none; }
+  .chip.on { background: var(--band-ink); color: var(--band); }
+  a.chip, a.ic, a.facts { text-decoration: none; }
   .chips::-webkit-scrollbar { display: none; }
   .chip {
     display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border: 0; border-radius: 14px;
@@ -209,7 +216,18 @@
   .choice-row.struck .label { color: var(--ink2); text-decoration: line-through; text-decoration-thickness: 2px; }
   .choice-row.struck .emoji { opacity: 0.35; }
   .choice-row.struck .strikebtn { opacity: 1; color: var(--ink); }
-  .choice-row.dimmed-row .choice, .choice-row.dimmed-row .chk { opacity: 0.4; }
+  .choice-row.dimmed-row .choice, .choice-row.dimmed-row .chk, .choice-row.dimmed-row .facts { opacity: 0.4; }
+  /* Watch: the IMDb score over the length, in the ↗ button's spot — a row never grows for it */
+  .facts {
+    flex: none; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 1px;
+    min-width: 44px; height: 38px; margin-left: 4px; padding: 0 8px; border-radius: 10px; background: var(--well);
+    color: var(--ink); font-size: 12.5px; font-weight: 750; line-height: 1.15; white-space: nowrap;
+    transition: opacity 0.2s ease;
+  }
+  .facts small { font-size: 11.5px; font-weight: 600; color: var(--ink2); }
+  .choice-row.struck .facts { opacity: 0.35; }
+  .ofacts { display: contents; }
+  .opt-row .facts { height: 34px; }
   .out { padding: 8px 6px 0; font-size: 14px; font-weight: 500; line-height: 1.4; color: var(--ink2); }
   @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
 
@@ -304,7 +322,9 @@
    anywhere except the two phones it belongs to.
    Payload (hash fragment, base64url of JSON):
      { v:1, s:'cut'|'close'|'done', t:title, l:lister, c:cutter,
-       o:[options], k:[keptIdx,keptIdx], w:winnerIdx }
+       o:[options], k:[keptIdx,keptIdx], w:winnerIdx,
+       m:mode ('w' watch | 't' travel | 'o' other; absent = food),
+       x:[facts per option — Watch only: [imdbId, score×10, minutes(, seasons)] or 0] }
    s:'draft' is a local-only fourth stage: it seeds the compose
    form (t/o/n) and never travels between players — used by
    deep links from dictation tools on the lister's own device.
@@ -495,7 +515,183 @@ const EMOJI_RULES = [
   [/stay (in|home)|couch|netflix|cozy/i, '🛋️'],
   [/date ?night/i, '✨'],
 ];
-const EMOJI_FALLBACK = ['🍽️', '✨', '🎲', '🌟', '💫', '🧭', '🎁'];
+
+/* ---------- modes ----------
+   A round has a mode: the kind of thing it decides. The title picks it (the chips, or its
+   words); the pill on compose overrides it. It rides in the link as `m` — absent means Food,
+   so every older link opens exactly as it always did. The mode sets the placeholders, the
+   emoji guesses and palette, and where each option's ↗ goes. */
+const MODES = {
+  f: { emoji: '🍽️', label: 'Food', link: 'maps',
+       fallback: ['🍽️', '✨', '🎲', '🌟', '💫', '🧭', '🎁'],
+       placeholders: ['that sushi place', 'the thai spot', 'tacos obviously', 'somewhere new', 'the reliable one', 'wildcard', 'dealer’s choice'] },
+  w: { emoji: '🍿', label: 'Watch', link: 'imdb',
+       fallback: ['🎬', '🍿', '📺', '🎞️', '✨', '🎥', '🛋️'],
+       placeholders: ['the buzzy one', 'a comfort rewatch', 'that documentary', 'something light', 'the one we keep skipping', 'wildcard', 'dealer’s choice'],
+       palette: ['🎬', '🍿', '📺', '🎞️', '🎥', '🛋️', '🚀', '👽', '🕵️', '🔍', '🔪', '👻', '🧛', '🧟', '💕', '😂',
+                 '🐉', '🏰', '💥', '⚔️', '🪖', '🤠', '🎭', '📜', '👑', '🧸', '🎵', '🏆', '🗺️', '🌌', '🦖', '🤖',
+                 '🎈', '🌊', '🔥', '❄️', '🎤', '🍔', '✨', '❤️'] },
+  t: { emoji: '✈️', label: 'Travel', link: 'maps',
+       fallback: ['✈️', '🧳', '🗺️', '🏝️', '🏔️', '🧭', '🌅'],
+       placeholders: ['somewhere warm', 'a city we haven’t done', 'a cabin somewhere', 'the beach', 'a long weekend', 'wildcard', 'dealer’s choice'],
+       palette: ['✈️', '🧳', '🗺️', '🧭', '🏝️', '🏖️', '🏔️', '⛰️', '🌲', '🏞️', '🏜️', '🏙️', '🌅', '🌴', '🌵', '🚗',
+                 '🚂', '⛵', '🏨', '🏕️', '🎿', '🍷', '🦞', '🌺', '🎰', '🗽', '🇺🇸', '🇨🇦', '🇲🇽', '🇬🇧', '🇫🇷', '🇮🇹',
+                 '🇪🇸', '🇵🇹', '🇬🇷', '🇯🇵', '🇹🇭', '🇮🇸', '🇩🇪', '🇮🇪'] },
+  o: { emoji: '✨', label: 'Other', link: null,
+       fallback: ['✨', '🎲', '🌟', '💫', '🎁', '🧭', '🎈'],
+       placeholders: ['the obvious one', 'the safe bet', 'something new', 'the long shot', 'wildcard', 'dealer’s choice', 'surprise me'],
+       palette: ['✨', '🎲', '🎁', '🎈', '🎉', '❤️', '🌟', '💫', '🧭', '📚', '🎨', '🎶', '🎮', '🃏', '♟️', '🧩',
+                 '🎤', '🎳', '🌳', '🏖️', '🛋️', '🐶', '🌷', '📸', '🛍️', '💆', '🏓', '⛳', '🍿', '☕', '🍷', '🍕'] },
+};
+const MODE_ORDER = ['f', 'w', 't', 'o'];
+const isMode = (m) => MODE_ORDER.includes(m); // never MODES[m]: a link could say m:"__proto__"
+const modeOf = (p) => (p && isMode(p.m) ? p.m : 'f');
+/* the title's words pick the mode, first match wins: live shows are outings, not TV ("Broadway
+   show"); watch words beat food ("dinner and a movie" lists movies); recipes and names are never
+   places ("dinner recipes"); food beats the softer other-words ("book club dinner") and travel
+   ("holiday dinner"); no signal at all leaves Food */
+const MODE_WORDS = [
+  ['f', /\b(broadway|theat(er|re)s?|concerts?|comedy club|stand.?up|live music)\b/i],
+  ['w', /\b(movies?|films?|cinema|flicks?|watch(ing)?|shows?|series|tv|telly|netflix|hbo|hulu|apple ?tv|prime video|binge|episodes?|documentar(y|ies)|anime|sitcoms?|rewatch|streaming)\b/i],
+  ['o', /\b(recipes?|names?)\b/i],
+  ['f', /\b(dinner|lunch|brunch|breakfast|supper|eats?|eating|food|restaurants?|take.?out|delivery|dessert|drinks?|coffee|snacks?|bars?|cocktails?|happy hour)\b/i],
+  ['o', /\b(colou?rs?|gifts?|presents?|paint|outfits?|books?|songs?|podcasts?)\b/i],
+  ['t', /\b(trips?|travel(l?ing)?|vacation|vacay|holidays?|getaway|honeymoon|flights?|hotels?|airbnb|destinations?|abroad|cruise|resort|long weekend|spring break|weekend away)\b/i],
+];
+const modeForTitle = (t) => (MODE_WORDS.find(([, re]) => re.test(t || '')) || ['f'])[0];
+/* in Watch, the title also says which shelf to search first: "Fargo" on movie night is the film */
+const typeHint = (t) => /\b(movies?|films?|cinema|flicks?)\b/i.test(t || '') ? 'movie'
+  : /\b(shows?|series|tv|episodes?|binge|sitcoms?)\b/i.test(t || '') ? 'series' : '';
+
+/* Travel looks for a place first: a country or a famous city gets its flag, a classic US trip
+   its signature (Vegas 🎰, Napa 🍷), then a kind of trip (cabin 🌲, lake 🏞️). Most specific line
+   first ("Portland, Maine" is lobster before Portland is coffee). Two letters = a flag. Matched
+   on accent-free lowercase, so "Montréal" and "montreal" both land. */
+const TRAVEL_PLACES = `
+🎰 vegas|las vegas|atlantic city
+🌺 hawaii|maui|oahu|kauai|honolulu|big island
+🎢 disney|disneyland|disney world|orlando|universal studios
+🎷 new orleans|nola
+🎸 nashville|memphis
+🌉 san francisco|sf|bay area
+🌴 miami|florida|key west|the keys|los angeles|palm springs|san diego|venice beach|malibu|santa barbara
+🌵 arizona|phoenix|scottsdale|sedona|tucson|joshua tree|santa fe|new mexico|marfa
+🏜️ grand canyon|moab|zion|death valley|utah
+🏞️ yosemite|yellowstone|national park|acadia|grand teton|glacier national|smokies|olympic national
+🍷 napa|sonoma|finger lakes|wine country|willamette
+🎿 aspen|vail|tahoe|park city|jackson hole|breckenridge|telluride|stowe|killington|big sky|whistler
+🦞 maine|cape cod|nantucket|martha's vineyard|marthas vineyard|bar harbor|boston
+🏖️ hamptons|montauk|outer banks|jersey shore|myrtle beach|cape may|fire island
+🍁 vermont|new hampshire|berkshires|catskills|adirondacks|poconos|hudson valley|upstate
+🏛️ dc|washington dc
+🔔 philly|philadelphia
+🌭 chicago
+☕ seattle|portland
+🏔️ denver|colorado|alaska|montana|wyoming|boulder|lake placid
+🤠 texas|austin|dallas|houston|san antonio
+🍑 georgia|atlanta|savannah
+🗽 new york|nyc|manhattan|brooklyn
+pt portugal|lisbon|lisboa|porto|algarve|madeira|azores|sintra
+es spain|madrid|barcelona|seville|sevilla|valencia|mallorca|majorca|ibiza|granada|malaga|san sebastian|bilbao|canary islands|tenerife
+fr france|paris|nice|provence|marseille|lyon|bordeaux|normandy|brittany|cannes|french riviera|cote d'azur|chamonix|loire|alsace|corsica
+it italy|rome|roma|florence|firenze|venice|venezia|milan|milano|naples|amalfi|positano|capri|sicily|sardinia|tuscany|cinque terre|lake como|bologna|puglia|dolomites|verona
+gr greece|athens|santorini|mykonos|crete|corfu|naxos|paros|rhodes
+gb uk|united kingdom|england|britain|london|scotland|edinburgh|glasgow|wales|cotswolds|cornwall|oxford|manchester|liverpool
+ie ireland|dublin|galway
+nl netherlands|holland|amsterdam|rotterdam
+be belgium|brussels|bruges
+de germany|berlin|munich|hamburg|bavaria|cologne
+at austria|vienna|salzburg
+ch switzerland|zurich|geneva|zermatt|lucerne|interlaken
+cz czechia|czech republic|prague
+hu hungary|budapest
+pl poland|krakow|warsaw
+hr croatia|dubrovnik|split|hvar|zagreb
+si slovenia|ljubljana|lake bled
+dk denmark|copenhagen
+se sweden|stockholm
+no norway|oslo|bergen|lofoten
+fi finland|helsinki|lapland
+is iceland|reykjavik
+ee estonia|tallinn
+ge tbilisi
+tr turkey|turkiye|istanbul|cappadocia
+ma morocco|marrakech|marrakesh|fes|fez|chefchaouen
+eg egypt|cairo
+za south africa|cape town|johannesburg
+ke kenya|nairobi
+tz tanzania|zanzibar|serengeti|kilimanjaro
+ae uae|dubai|abu dhabi
+il israel|tel aviv|jerusalem
+jo jordan|petra
+in india|delhi|mumbai|goa|jaipur|kerala
+th thailand|bangkok|phuket|chiang mai|koh samui
+vn vietnam|hanoi|ho chi minh|saigon|hoi an|ha long
+kh cambodia|siem reap|angkor
+id indonesia|bali|jakarta|lombok
+sg singapore
+my malaysia|kuala lumpur
+ph philippines|palawan|manila|el nido|siargao
+jp japan|tokyo|kyoto|osaka|hokkaido|okinawa|nara|hakone|sapporo
+kr korea|south korea|seoul|busan|jeju
+hk hong kong
+tw taiwan|taipei
+cn china|beijing|shanghai
+au australia|sydney|melbourne|brisbane|perth|great barrier reef|uluru
+nz new zealand|auckland|queenstown|wellington
+ca canada|montreal|toronto|vancouver|quebec|banff|ottawa|nova scotia|halifax
+mx mexico|mexico city|cdmx|cancun|tulum|oaxaca|cabo|los cabos|puerto vallarta|playa del carmen|guadalajara|merida|san miguel de allende
+cu cuba|havana
+jm jamaica|montego bay|negril
+pr puerto rico|san juan
+do dominican republic|punta cana|santo domingo
+bs bahamas|nassau
+bb barbados
+aw aruba
+lc st lucia|saint lucia
+tc turks and caicos|turks & caicos
+cr costa rica
+bz belize
+pa panama
+co colombia|bogota|cartagena|medellin
+pe peru|lima|cusco|machu picchu
+ec ecuador|galapagos|quito
+ar argentina|buenos aires|patagonia|mendoza
+cl chile
+br brazil|rio|rio de janeiro|sao paulo|florianopolis
+uy uruguay|montevideo
+🇪🇺 europe
+🌏 asia
+🏝️ caribbean|island|islands|tropical
+🏔️ mountain|mountains|alps|mountain town
+🌲 cabin|cabins|lodge|woods|forest
+🏞️ lake|lake house|lakehouse
+🏜️ desert
+🏙️ city|city break|big city
+🏖️ beach|beach town|beach house|coast|seaside
+🚗 road trip|roadtrip|drive
+`.trim().split('\n').map((line) => {
+  const sp = line.indexOf(' ');
+  const head = line.slice(0, sp);
+  const names = line.slice(sp + 1).split('|');
+  const e = /^[a-z]{2}$/.test(head) ? String.fromCodePoint(...[...head.toUpperCase()].map((c) => 0x1F1A5 + c.charCodeAt(0))) : head;
+  return { e, names, re: new RegExp('\\b(' + names.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\b') };
+});
+const placeNorm = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .replace(/[’‘]/g, "'").replace(/\./g, '').replace(/\s+/g, ' ');
+
+/* Watch: a title's emoji comes from its genres. IMDb lists them alphabetically, so this order —
+   most telling first — decides: Inception (Adventure, Sci-Fi, Thriller) is 🚀, Breaking Bad
+   (Crime, Drama, Thriller) is 🕵️, Past Lives (Drama, Romance) is 💕. */
+const GENRE_EMOJI = [
+  ['Animation', '🧸'], ['Documentary', '🎥'], ['Horror', '👻'], ['Sci-Fi', '🚀'], ['Western', '🤠'],
+  ['War', '🪖'], ['Musical', '🎵'], ['Music', '🎵'], ['Sport', '🏆'], ['Romance', '💕'], ['Crime', '🕵️'],
+  ['Mystery', '🔍'], ['Comedy', '😂'], ['Fantasy', '🐉'], ['Action', '💥'], ['Thriller', '🔪'],
+  ['History', '📜'], ['Biography', '📜'], ['Adventure', '🗺️'], ['Family', '🎈'], ['Reality-TV', '📺'],
+  ['Game-Show', '📺'], ['Talk-Show', '📺'], ['Drama', '🎭'],
+];
+const genreEmoji = (genres, series) =>
+  (GENRE_EMOJI.find(([g]) => (genres || []).includes(g)) || [, series ? '📺' : '🎬'])[1];
 /* plain Google Maps search deep link — no API, no key; iOS opens the Maps app */
 const mapsUrl = (name) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(name);
 /* ---------- rendered map with numbered pins (Leaflet + OSM tiles) ----------
@@ -544,7 +740,7 @@ async function geocodeNear(name, loc) {
 }
 async function initGeo(p, idxs) {
   const status = $('#geo-status');
-  if (!MAP_VIEW || !$('#geo-map') || typeof L === 'undefined') return;
+  if (!MAP_VIEW || !$('#geo-map') || typeof L === 'undefined' || MODES[modeOf(p)].link !== 'maps') return; // films don't geocode
   const run = ++geo.run;
   geo.markers = {};
   geo.loc = await getLocation();
@@ -605,12 +801,23 @@ function splitEmoji(s) {
 }
 const optLabel = (opt) => splitEmoji(opt).rest;           // '' for an emoji-only option
 const optName = (opt) => splitEmoji(opt).rest || opt;     // what geocoders / Maps search for
-function emojiFor(text, i) {
+/* the shared guesser — both phones re-derive it, so it may read only the text, slot and mode */
+function emojiFor(text, i, mode = 'f') {
   const lead = splitEmoji(text).e;
   if (lead) return lead;
-  for (const [re, e] of EMOJI_RULES) if (re.test(text)) return e;
-  return EMOJI_FALLBACK[i % EMOJI_FALLBACK.length];
+  if (mode === 't') {
+    const n = placeNorm(text);
+    for (const { re, e } of TRAVEL_PLACES) if (re.test(n)) return e;
+  }
+  // a film title is just a name — "Fight Club" is no sandwich — so Watch skips the word rules
+  if (mode !== 'w') for (const [re, e] of EMOJI_RULES) if (re.test(text)) return e;
+  const fb = (MODES[mode] || MODES.f).fallback;
+  return fb[i % fb.length];
 }
+/* the round's own emoji, beside its title: what Watch is watching, otherwise the shared guess */
+const titleEmoji = (t, mode) => mode === 'w'
+  ? (/\b(shows?|series|tv|episodes?|binge)\b/i.test(t) ? '📺' : '🍿')
+  : emojiFor(t, 0, mode);
 const EMOJI_PALETTE = [
   '🍣', '🍜', '🍕', '🌮', '🍔', '🍛', '🍝', '🥟',
   '🥩', '🦪', '🥘', '🥙', '🍲', '🥗', '🥪', '🍗',
@@ -683,7 +890,23 @@ const EMOJI_ALL = [
   ['🌷', 'garden flowers botanical'], ['🌸', 'flowers blossom spring'], ['💐', 'flowers bouquet'],
   ['🕯️', 'candle romantic cozy'], ['🎃', 'pumpkin halloween patch'], ['🎄', 'christmas holiday'],
   ['❄️', 'snow winter'], ['☀️', 'sunny outdoors'],
+  // what Watch and Travel reach for
+  ['🎞️', 'film reel movie cinema classic'], ['🎥', 'camera documentary film movie'], ['🚀', 'rocket scifi space'],
+  ['👽', 'alien scifi space ufo'], ['🤖', 'robot ai scifi'], ['🌌', 'space galaxy stars scifi'],
+  ['🕵️', 'detective crime spy mystery'], ['🔍', 'mystery whodunit detective'], ['🔪', 'thriller knife killer crime'],
+  ['👻', 'ghost horror scary spooky halloween'], ['🧛', 'vampire horror dracula'], ['🧟', 'zombie horror'],
+  ['😂', 'comedy funny laugh sitcom'], ['🐉', 'dragon fantasy'], ['💥', 'action explosion blockbuster'],
+  ['⚔️', 'swords battle epic fantasy war'], ['🪖', 'war military soldier'], ['🤠', 'western cowboy texas'],
+  ['📜', 'history historical period biopic'], ['👑', 'royal king queen crown period'], ['🧸', 'animation animated kids cartoon teddy'],
+  ['🎵', 'music musical song'], ['🏆', 'trophy sport sports award'], ['🦖', 'dinosaur jurassic'], ['🌊', 'ocean sea waves'],
+  ['🧳', 'luggage suitcase trip travel pack'], ['🏔️', 'mountains snow alps peak'], ['🏜️', 'desert dunes'],
+  ['🏙️', 'city skyline urban'], ['🌴', 'palm tropical miami'], ['🌵', 'cactus desert arizona'],
+  ['🌺', 'hibiscus hawaii tropical'], ['🎰', 'vegas casino slots'], ['🇺🇸', 'usa us america united states'],
 ];
+/* the search box also finds every flag Travel knows: "japan" → 🇯🇵 */
+const EMOJI_SEARCH = EMOJI_ALL.concat(TRAVEL_PLACES
+  .filter((p) => /\p{Regional_Indicator}/u.test(p.e))
+  .map((p) => [p.e, p.names.join(' ')]));
 
 /* ---------- tiny ui helpers ---------- */
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
@@ -725,7 +948,7 @@ const band = (giant, inner) => `
     <div class="z">${inner}</div>
   </div></header>`;
 const bar = (inner) => `<div class="bar"><div class="bar-in">${inner}</div></div>`;
-const titlePill = (t) => t ? `<span class="pill">${emojiFor(t, 0)} ${esc(t)}</span>` : '';
+const titlePill = (t, mode) => t ? `<span class="pill">${titleEmoji(t, mode)} ${esc(t)}</span>` : '';
 const houseRule = `<p class="house-rule">House rule: <b>say what you actually want.</b><br>It works out in the end.</p>`;
 /* notes pass back and forth: each handoff can carry one from the sender, shown to the
    opener of the link. n = lister's (compose), kn = cutter's (cut), wn = lister's (verdict).
@@ -814,6 +1037,156 @@ function optSuggestList() { // native autocomplete over your own past option nam
   return `<datalist id="opt-suggest">${items.map((o) => `<option value="${esc(o.label)}"></option>`).join('')}</datalist>`;
 }
 
+/* ---------- Watch: the IMDb score + length ----------
+   IMDb has no free official API: its own search sends no CORS header, and OMDb/TMDB need keys a
+   public page can't keep. Cinemeta, Stremio's free public movie database, is keyless, allows
+   browser calls, and reports IMDb's score, the runtime, the genres and the seasons. Only the
+   LISTER's phone asks, only in Watch mode, and only once a title stops changing (a pause, or
+   leaving the row) — half-typed words never go out. The facts then ride in the link (`x`), so
+   the other phone asks no one. Each title is asked once, then remembered on this phone. */
+const CINEMETA = 'https://v3-cinemeta.strem.io';
+const LOOKUP_PAUSE = 1000; // ms without typing before a title counts as finished
+const watch = { cache: store.get('watchCache', {}), pending: new Map(), timers: {}, hint: '' };
+const bareName = (s) => normName(String(s || '').replace(/^\s*(the|a|an)\s+/i, ''));
+const watchKey = (text, hint) => hint + '|' + normName(splitEmoji(text).rest);
+const clampInt = (n, hi) => Math.max(0, Math.min(hi, Math.round(Number(n) || 0)));
+function cachedFacts(text, hint) { // undefined: not asked yet · 0: no match · {…}: the facts
+  const hit = watch.cache[watchKey(text, hint)];
+  return hit && Date.now() - hit.ts < 14 * 864e5 ? hit.f : undefined;
+}
+function saveWatchCache() { // this phone only, the newest 80 titles
+  const keys = Object.keys(watch.cache).sort((a, b) => watch.cache[b].ts - watch.cache[a].ts);
+  for (const k of keys.slice(80)) delete watch.cache[k];
+  store.set('watchCache', watch.cache);
+}
+function parseRuntime(s) { // "148 min", "2h 28min", "1h"
+  const t = String(s || '');
+  const h = t.match(/(\d+)\s*h/i), m = t.match(/(\d+)\s*m/i);
+  return h ? Number(h[1]) * 60 + (m ? Number(m[1]) : 0) : m ? Number(m[1]) : 0;
+}
+async function cinemeta(path) {
+  const r = await fetch(CINEMETA + path, { credentials: 'omit', referrerPolicy: 'no-referrer' });
+  if (!r.ok) throw new Error('cinemeta ' + r.status);
+  return r.json();
+}
+/* both shelves at once. An exact name beats a prefix ("Shawshank" still finds The Shawshank
+   Redemption), a year you typed must agree, the title's hint breaks a film/show tie, then
+   popularity does (Fargo the show over Fargo the film). Throws only when Cinemeta can't be
+   reached, so an offline miss is asked again later instead of remembered as "no match". */
+async function lookupTitle(text, hint) {
+  const raw = splitEmoji(text).rest.trim().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const year = (raw.match(/\b(19|20)\d{2}\b/) || [''])[0];
+  const want = bareName(year ? raw.replace(year, '') : raw);
+  if (want.length < 2) return 0;
+  const shelves = await Promise.allSettled(['movie', 'series'].map((kind) =>
+    cinemeta(`/catalog/${kind}/top/search=${encodeURIComponent(raw)}.json`)
+      .then((j) => (j.metas || []).slice(0, 4).map((m) => ({ m, kind })))));
+  if (shelves.every((s) => s.status === 'rejected')) throw new Error('cinemeta unreachable');
+  const scored = shelves.flatMap((s) => s.value || []).map((c) => {
+    if (!/^tt\d{1,10}$/.test(c.m.imdb_id || c.m.id || '')) return null; // its id goes into the next request
+    const n = bareName(c.m.name);
+    let score = n === want ? 3 : n.startsWith(want) ? 2 : 0;
+    if (!score) return null;
+    if (year) score += String(c.m.releaseInfo || c.m.year || '').startsWith(year) ? 2 : -5;
+    if (hint && c.kind === hint) score += 1;
+    return score > 0 ? { ...c, score } : null;
+  }).filter(Boolean).sort((a, b) => b.score - a.score);
+  if (!scored.length) return 0;
+  const top = ['movie', 'series'].map((k) => scored.find((c) => c.kind === k))
+    .filter((c) => c && c.score === scored[0].score);
+  const metas = await Promise.allSettled(top.map((c) =>
+    cinemeta(`/meta/${c.kind}/${c.m.imdb_id || c.m.id}.json`).then((j) => j.meta && { ...j.meta, kind: c.kind })));
+  if (metas.every((s) => s.status === 'rejected')) throw new Error('cinemeta unreachable');
+  const best = metas.map((s) => s.value).filter(Boolean).sort((a, b) => (b.popularity || 0) - (a.popularity || 0))[0];
+  return best ? factsFromMeta(best) : 0;
+}
+function factsFromMeta(m) {
+  const id = Number(String(m.imdb_id || m.id || '').replace(/^tt/, ''));
+  if (!Number.isInteger(id) || id <= 0 || id > 1e9) return 0;
+  const series = m.kind === 'series';
+  return {
+    id, series,
+    score: clampInt((parseFloat(m.imdbRating) || 0) * 10, 100),
+    minutes: clampInt(parseRuntime(m.runtime), 5000),
+    seasons: series ? clampInt(new Set((m.videos || []).map((v) => v.season).filter((s) => Number.isInteger(s) && s > 0)).size, 500) : 0,
+    genre: genreEmoji(m.genre || m.genres, series),
+    year: String(m.releaseInfo || m.year || '').slice(0, 4),
+  };
+}
+const packFacts = (f) => f.series ? [f.id, f.score, f.minutes, f.seasons] : [f.id, f.score, f.minutes];
+/* the receiving side trusts nothing it decodes: numbers only, in range, or no facts at all */
+function factsAt(p, i) {
+  const f = Array.isArray(p.x) ? p.x[i] : null;
+  if (!Array.isArray(f) || f.length < 3 || f.length > 4 || !f.every((n) => Number.isInteger(n) && n >= 0)) return null;
+  const [id, score, minutes, seasons = 0] = f;
+  if (!id || id > 1e9 || score > 100 || minutes > 5000 || seasons > 500) return null;
+  return { id, score, minutes, seasons, series: f.length === 4 };
+}
+const imdbTitleUrl = (id) => 'https://www.imdb.com/title/tt' + String(id).padStart(7, '0') + '/';
+const imdbFindUrl = (name) => 'https://www.imdb.com/find/?q=' + encodeURIComponent(name);
+const fmtScore = (f) => f.score ? '★ ' + (f.score / 10).toFixed(1) : '';
+function fmtLength(f) {
+  if (f.series) return f.seasons ? `${f.seasons} season${f.seasons === 1 ? '' : 's'}` : f.minutes ? f.minutes + 'm eps' : '';
+  if (!f.minutes) return '';
+  const h = Math.floor(f.minutes / 60), m = f.minutes % 60;
+  return h ? h + 'h' + (m ? ' ' + m + 'm' : '') : m + 'm';
+}
+/* the score over the length; while you compose, over the year instead, so a wrong "Dune" shows */
+function factsHTML(f, name, compose) {
+  const under = compose ? (f.year || fmtLength(f)) : fmtLength(f);
+  const said = [fmtScore(f).replace('★', 'scored'), under].filter(Boolean).join(', ');
+  return `<a class="facts" href="${imdbTitleUrl(f.id)}" target="_blank" rel="noopener" aria-label="${esc(name)} on IMDb${said ? ': ' + esc(said) : ''}">${esc(fmtScore(f) || 'IMDb')}${under ? `<small>${esc(under)}</small>` : ''}</a>`;
+}
+/* the ↗ beside each option: Maps for places; IMDb for titles — the score + length when the
+   lister's phone found them, a plain IMDb search when it didn't; nothing at all for Other */
+function linkSlot(p, i, mode) {
+  const name = optName(p.o[i]);
+  const link = MODES[mode].link;
+  if (link === 'maps') return `<button class="ic mapbtn" data-action="show-map" data-i="${i}" aria-label="open ${esc(name)} in Maps">${MAP_ICON}</button>`;
+  if (link !== 'imdb') return '';
+  const f = factsAt(p, i);
+  return f ? factsHTML(f, name)
+    : `<a class="ic imdbbtn" href="${imdbFindUrl(name)}" target="_blank" rel="noopener" aria-label="look up ${esc(name)} on IMDb">${MAP_ICON}</a>`;
+}
+function winnerLink(p, mode) {
+  const link = MODES[mode].link;
+  if (link === 'maps') return `<button class="chip maps" data-action="show-map" data-i="${p.w}">${MAP_ICON} Open in Maps</button>`;
+  if (link !== 'imdb') return '';
+  const f = factsAt(p, p.w);
+  const bits = f ? [fmtScore(f), fmtLength(f)].filter(Boolean).join(' · ') : '';
+  return `<a class="chip maps" href="${f ? imdbTitleUrl(f.id) : imdbFindUrl(optName(p.o[p.w]))}" target="_blank" rel="noopener">${MAP_ICON} IMDb${bits ? ' · ' + esc(bits) : ''}</a>`;
+}
+/* compose: a row's lookup waits for a pause in typing, or runs at once when you leave the row */
+function scheduleLookup(i, now) {
+  clearTimeout(watch.timers[i]);
+  if (roundMode === 'w') watch.timers[i] = setTimeout(() => runLookup(i), now ? 0 : LOOKUP_PAUSE);
+}
+function scheduleAllLookups(now) { for (let i = 0; i < composeCount; i++) scheduleLookup(i, now); }
+async function runLookup(i) {
+  const text = $('#opt' + i)?.value.trim() || '';
+  const hint = typeHint($('#title-in')?.value);
+  if (roundMode !== 'w' || !splitEmoji(text).rest.trim() || cachedFacts(text, hint) !== undefined) return;
+  const key = watchKey(text, hint);
+  let job = watch.pending.get(key);
+  if (!job) {
+    job = lookupTitle(text, hint)
+      .then((f) => { watch.cache[key] = { f, ts: Date.now() }; saveWatchCache(); })
+      .catch(() => {}) // offline, or Cinemeta changed: the row keeps a plain IMDb search ↗
+      .finally(() => watch.pending.delete(key));
+    watch.pending.set(key, job);
+  }
+  await job;
+  for (let j = 0; j < composeCount; j++) { updateEmojiBtn(j); updateFactsUI(j); } // each row re-reads its own text
+  schedulePrepare();
+}
+function updateFactsUI(i) {
+  const slot = $('#ofacts' + i);
+  if (!slot) return;
+  const text = $('#opt' + i)?.value.trim() || '';
+  const f = roundMode === 'w' && text ? cachedFacts(text, typeHint($('#title-in')?.value)) : null;
+  slot.innerHTML = f ? factsHTML(f, optName(text), true) : '';
+}
+
 /* ---------- confetti ---------- */
 function confetti() {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -861,11 +1234,12 @@ let composeCount = 5;      // visible option slots
 let optEmoji = {};         // compose: hand-picked emoji per option index
 let paletteFor = null;     // compose: which row's emoji palette is open
 let emojiTouched = new Set(); // rows where you opened the palette this render — never auto-fill over your choice
+let roundMode = 'f';       // compose: this round's mode (MODES)
+let modeTouched = false;   // compose: you picked the mode on the pill, so the title stops steering it
 
 const MAP_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>`;
 const X_ICON = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>`;
 
-const OPT_PLACEHOLDERS = ['that sushi place', 'the thai spot', 'tacos obviously', 'somewhere new', 'the reliable one', 'wildcard', 'dealer’s choice'];
 const tint = (i) => 't' + ((i % 5) + 1); // the pastel square behind each option's emoji
 const shown = (opt) => optLabel(opt) || opt; // an emoji-only option shows as its emoji
 /* a note starts folded into its ✎ row so each step fits one screen; revealNote() unfolds it */
@@ -893,25 +1267,36 @@ function renderHome() {
     composeCount = Math.min(6, Math.max(composeCount, draft.count || 5));
     optEmoji = { ...draft.emoji };
   }
+  // the mode follows the title, unless you picked it on the pill
+  modeTouched = !!(draft?.modeTouched && isMode(draft.mode));
+  roundMode = modeTouched ? draft.mode : modeForTitle(draft?.title);
+  watch.hint = typeHint(draft?.title);
+  const ph = MODES[roundMode].placeholders;
   const optRows = Array.from({ length: composeCount }, (_, i) => `
     <div class="cell opt-row">
       <button class="tile ${tint(i)} emoji-btn empty" data-action="emoji-pick" data-i="${i}"
               aria-label="pick an emoji for option ${i + 1}">＋</button>
       <input class="opt-in" id="opt${i}" maxlength="64" autocomplete="off" list="opt-suggest" enterkeyhint="next"
-             aria-label="option ${i + 1}" placeholder="${esc(OPT_PLACEHOLDERS[i % OPT_PLACEHOLDERS.length])}">
+             aria-label="option ${i + 1}" placeholder="${esc(ph[i % ph.length])}">
+      <span class="ofacts" id="ofacts${i}"></span>
     </div>`).join('');
 
   app.innerHTML = `
     ${band('5', `
-      <div class="band-row">${steps(5)}</div>
+      <div class="band-row">${steps(5)}<button class="pill mode-pill" id="mode-pill" data-action="mode-open" aria-expanded="false"></button></div>
       <input class="title-in" id="title-in" maxlength="48" autocomplete="off" enterkeyhint="next"
              aria-label="what you're deciding" placeholder="What are we deciding?">
       <p class="lede">List five. They keep two. You pick the winner.</p>
-      <div class="chips">
+      <div class="chips title-chips">
         <button class="chip" data-action="chip-title" data-title="Dinner tonight">🍽️ Dinner</button>
         <button class="chip" data-action="chip-title" data-title="Takeout">🥡 Takeout</button>
         <button class="chip" data-action="chip-title" data-title="Movie night">🍿 Movie</button>
+        <button class="chip" data-action="chip-title" data-title="Next show">📺 Show</button>
+        <button class="chip" data-action="chip-title" data-title="Next trip">✈️ Trip</button>
         <button class="chip" data-action="chip-title" data-title="Date night">✨ Date night</button>
+      </div>
+      <div class="chips mode-chips" role="radiogroup" aria-label="what kind of round">
+        ${MODE_ORDER.map((k) => `<button class="chip" data-action="mode-set" data-mode="${k}" role="radio" aria-checked="false">${MODES[k].emoji} ${MODES[k].label}</button>`).join('')}
       </div>`)}
     <main class="body">
       <div class="hdr"><span>Your five</span>${composeCount < 6 ? '<button class="add-opt" data-action="add-option">+ a 6th, if you must</button>' : ''}</div>
@@ -939,10 +1324,61 @@ function renderHome() {
     if (draft.note) $('#note-in').value = draft.note;
     (draft.opts || []).forEach((v, i) => { const el = $('#opt' + i); if (el && v) el.value = v; });
   }
-  for (let i = 0; i < composeCount; i++) updateEmojiBtn(i);
+  updateModeUI(); // the pill, the placeholders, every emoji tile and score
   fitTitle();
   if ($('#note-in').value) revealNote('note-in');
+  scheduleAllLookups(true); // a restored draft's titles are finished ones (and usually remembered)
   schedulePrepare();
+}
+
+/* ---------- compose: the mode pill ---------- */
+function updateModeUI() {
+  const m = MODES[roundMode];
+  const pill = $('#mode-pill');
+  if (pill) {
+    pill.textContent = `${m.emoji} ${m.label} ▾`;
+    pill.setAttribute('aria-label', `${m.label} round. Tap to change what kind.`);
+  }
+  document.querySelectorAll('.mode-chips .chip').forEach((c) => {
+    const on = c.dataset.mode === roundMode;
+    c.classList.toggle('on', on);
+    c.setAttribute('aria-checked', String(on));
+  });
+  for (let i = 0; i < composeCount; i++) {
+    const el = $('#opt' + i);
+    if (el) el.placeholder = m.placeholders[i % m.placeholders.length];
+    updateEmojiBtn(i);
+    updateFactsUI(i);
+  }
+}
+function setMode(mode, touched) {
+  if (touched !== undefined) modeTouched = touched;
+  const into = mode !== roundMode && mode === 'w';
+  if (mode !== roundMode) closePalette(); // its default grid belongs to the old mode
+  roundMode = mode;
+  updateModeUI();
+  if (into) scheduleAllLookups(true); // titles typed before the switch are finished ones
+  saveDraft();
+  schedulePrepare();
+}
+function toggleModeMenu(open) {
+  const b = $('.band');
+  if (!b) return;
+  b.classList.toggle('mode-open', open);
+  $('#mode-pill')?.setAttribute('aria-expanded', String(open));
+}
+/* a new title can change the mode (unless you picked one) and, in Watch, which shelf to search */
+function titleChanged(now) {
+  fitTitle();
+  const title = $('#title-in')?.value || '';
+  if (!modeTouched) setMode(modeForTitle(title));
+  else { saveDraft(); schedulePrepare(); }
+  const hint = typeHint(title);
+  if (hint !== watch.hint) {
+    watch.hint = hint;
+    for (let i = 0; i < composeCount; i++) { updateEmojiBtn(i); updateFactsUI(i); }
+    scheduleAllLookups(now);
+  }
 }
 
 function renderCut(p) {
@@ -952,9 +1388,10 @@ function renderCut(p) {
   const myName = store.get('name', '');
   const forSelf = myName && myName === p.l;
   const firstTime = !store.get('history', []).length;
+  const mode = modeOf(p);
   app.innerHTML = `
     ${band('2', `
-      <div class="band-row">${steps(2)}${titlePill(p.t)}</div>
+      <div class="band-row">${steps(2)}${titlePill(p.t, mode)}</div>
       <p class="kicker">${p.l ? esc(p.l) + ' sent ' : 'You got '}${countWord(p.o.length)}.</p>
       <h1>Keep the two you actually want.</h1>`)}
     <main class="body">
@@ -965,10 +1402,10 @@ function renderCut(p) {
         ${p.o.map((opt, i) => `
         <div class="cell choice-row">
           <button class="choice" data-action="toggle-keep" data-i="${i}" aria-pressed="false" style="animation-delay:${i * 55}ms">
-            <span class="tile ${tint(i)} emoji">${emojiFor(opt, i)}</span>
+            <span class="tile ${tint(i)} emoji">${emojiFor(opt, i, mode)}</span>
             <span class="label">${esc(optLabel(opt))}</span>
           </button>
-          <button class="ic mapbtn" data-action="show-map" data-i="${i}" aria-label="open ${esc(optName(opt))} in Maps">${MAP_ICON}</button>
+          ${linkSlot(p, i, mode)}
           <button class="ic strikebtn" data-action="toggle-strike" data-i="${i}" aria-label="rule out ${esc(optName(opt))}">${X_ICON}</button>
           <button class="chk" data-action="toggle-keep" data-i="${i}" tabindex="-1" aria-hidden="true"></button>
         </div>`).join('')}
@@ -999,9 +1436,10 @@ function renderClose(p) {
   finalPick = null;
   const kept = p.k.map((i) => ({ i, text: p.o[i] }));
   const cut = p.o.filter((_, i) => !p.k.includes(i));
+  const mode = modeOf(p);
   app.innerHTML = `
     ${band('1', `
-      <div class="band-row">${steps(1)}${titlePill(p.t)}</div>
+      <div class="band-row">${steps(1)}${titlePill(p.t, mode)}</div>
       <p class="kicker">${p.c ? esc(p.c) + ' kept two.' : 'Down to two.'}</p>
       <h1>Pick the winner.</h1>`)}
     <main class="body">
@@ -1011,10 +1449,10 @@ function renderClose(p) {
         ${kept.map(({ i, text }, j) => `
         <div class="cell big choice-row">
           <button class="choice" data-action="pick-final" data-i="${i}" aria-pressed="false" style="animation-delay:${j * 90}ms">
-            <span class="tile ${tint(i)} emoji">${emojiFor(text, i)}</span>
+            <span class="tile ${tint(i)} emoji">${emojiFor(text, i, mode)}</span>
             <span class="label">${esc(optLabel(text))}</span>
           </button>
-          <button class="ic mapbtn" data-action="show-map" data-i="${i}" aria-label="open ${esc(optName(text))} in Maps">${MAP_ICON}</button>
+          ${linkSlot(p, i, mode)}
           <button class="chk" data-action="pick-final" data-i="${i}" tabindex="-1" aria-hidden="true"></button>
         </div>`).join('')}
       </div>
@@ -1047,7 +1485,7 @@ function renderDone(p) {
       <div class="band-row">${steps(0)}</div>
       <p class="kicker"><span class="trophy">🏆</span> ${p.t ? esc(p.t) + ' is decided.' : 'Decided.'}</p>
       <div class="winner-name${size}">${esc(wName)}</div>
-      <button class="chip maps" data-action="show-map" data-i="${p.w}">${MAP_ICON} Open in Maps</button>`)}
+      ${winnerLink(p, modeOf(p))}`)}
     <main class="body">
       ${newcomer ? '<div class="card invite"><b>New here?</b> 5·2·1 is how two people decide anything: one lists five, the other keeps two, the lister picks one.</div>' : ''}
       <div class="hdr">How it went</div>
@@ -1086,18 +1524,25 @@ function readCompose() {
   const title = $('#title-in')?.value.trim() ?? '';
   const name = $('#name-in')?.value.trim() ?? '';
   const note = $('#note-in')?.value.trim() ?? '';
-  const opts = [];
+  const mode = roundMode;
+  const hint = typeHint(title);
+  const opts = [], facts = [];
   for (let i = 0; i < composeCount; i++) {
     const v = $('#opt' + i)?.value.trim() ?? '';
-    let e = optEmoji[i];
-    if (v && e && emojiFor(v, opts.length) === e) e = null; // receiver re-derives it — keep the link short
+    let e = optEmoji[i] || (v ? autoEmoji(i, v) : null);
+    if (v && e && emojiFor(v, opts.length, mode) === e) e = null; // receiver re-derives it — keep the link short
     if (v && e) opts.push(e + ' ' + v);
     else if (v || e) opts.push(v || e); // a lone emoji is a legitimate option
+    else continue;
+    const f = mode === 'w' && v ? cachedFacts(v, hint) : null;
+    facts.push(f ? packFacts(f) : 0); // aligned with o: 0 = nothing found (yet)
   }
   if (opts.length < 3) return { error: 'Give them at least 3 options (5 is the ritual).' };
   const lower = opts.map((o) => o.toLowerCase());
   if (new Set(lower).size !== lower.length) return { error: 'Two of those are the same. Every option should be distinct.' };
   const payload = { v: 1, s: 'cut', t: title, l: name, o: opts };
+  if (mode !== 'f') payload.m = mode;               // Food is the default: older links have no mode
+  if (facts.some(Array.isArray)) payload.x = facts; // Watch only, once something was found
   if (note) payload.n = note; // keep the field out of the URL entirely when unused
   return { payload, title, name };
 }
@@ -1266,9 +1711,13 @@ app.addEventListener('click', (e) => {
   const act = el?.dataset.action;
   // gave up on the emoji? tapping anywhere else puts the palette away
   if (paletteFor !== null && act !== 'emoji-pick' && !e.target.closest('.emoji-palette')) closePalette();
+  // …and the mode chips fold back the same way
+  if (act !== 'mode-open' && act !== 'mode-set' && $('.band.mode-open')) toggleModeMenu(false);
   if (!el) return;
-  if (act === 'chip-title') { $('#title-in').value = el.dataset.title; fitTitle(); saveDraft(); schedulePrepare(); }
-  else if (act === 'add-option') { composeCount = Math.min(6, composeCount + 1); const vals = saveComposeValues(); renderHome(); restoreComposeValues(vals); saveDraft(); toast('The ritual is five. Desperation noted 😌'); }
+  if (act === 'chip-title') { $('#title-in').value = el.dataset.title; modeTouched = false; titleChanged(true); } // a chip's title sets its mode
+  else if (act === 'mode-open') toggleModeMenu(!$('.band')?.classList.contains('mode-open'));
+  else if (act === 'mode-set') { toggleModeMenu(false); setMode(el.dataset.mode, true); }
+  else if (act === 'add-option') { composeCount = Math.min(6, composeCount + 1); saveDraft(); const vals = saveComposeValues(); renderHome(); restoreComposeValues(vals); saveDraft(); toast('The ritual is five. Desperation noted 😌'); }
   else if (act === 'send-msg') share('messages');
   else if (act === 'compose-share' || act === 'cut-share' || act === 'close-share') share('copy');
   else if (act === 'toggle-keep') toggleKeep(el);
@@ -1292,7 +1741,7 @@ app.addEventListener('click', (e) => {
   }
 });
 function saveDraft() {
-  store.set('draft', { ...saveComposeValues(), emoji: { ...optEmoji }, count: composeCount });
+  store.set('draft', { ...saveComposeValues(), emoji: { ...optEmoji }, count: composeCount, mode: roundMode, modeTouched });
 }
 function saveComposeValues() {
   return {
@@ -1306,14 +1755,26 @@ function restoreComposeValues(v) {
   if ($('#name-in')) $('#name-in').value = v.name ?? '';
   if ($('#note-in')) $('#note-in').value = v.note ?? '';
   v.opts.forEach((val, i) => { if ($('#opt' + i)) $('#opt' + i).value = val; });
-  for (let i = 0; i < composeCount; i++) updateEmojiBtn(i);
+  watch.hint = typeHint(v.title);
+  updateModeUI();
   fitTitle();
   if (v.note) revealNote('note-in');
+  scheduleAllLookups(true);
   schedulePrepare();
 }
 
 /* ---------- compose emoji picker ---------- */
 function emojiBtnFor(i) { return $('#opt' + i)?.closest('.opt-row')?.querySelector('.emoji-btn'); }
+/* an emoji this phone fills in by itself, beyond the shared guesser: your own past pick for this
+   name, or in Watch the genre of the title it found. Worked out from the text every time, never
+   stored, so it follows the text — clear the row and it's gone, instead of lingering as a lone
+   emoji option. A row whose palette you opened stops getting the memory; the genre is the app's
+   own guess, so "auto" in the palette brings it back. */
+function autoEmoji(i, v) {
+  if (splitEmoji(v).e) return null;
+  return (!emojiTouched.has(i) && rememberedEmoji(v))
+    || (roundMode === 'w' && cachedFacts(v, typeHint($('#title-in')?.value))?.genre) || null;
+}
 function updateEmojiBtn(i) {
   const btn = emojiBtnFor(i);
   if (!btn) return;
@@ -1322,17 +1783,17 @@ function updateEmojiBtn(i) {
   btn.classList.toggle('set', !!ex);
   btn.classList.toggle('auto', !ex && !!v);
   btn.classList.toggle('empty', !ex && !v);
-  btn.textContent = ex || (v ? emojiFor(v, i) : '＋'); // no pick yet → live-preview the auto-guess
+  btn.textContent = ex || (v ? autoEmoji(i, v) || emojiFor(v, i, roundMode) : '＋'); // no pick yet → live-preview the auto-guess
 }
 function closePalette() { $('#emoji-palette')?.remove(); paletteFor = null; }
 function palCells(i, query) {
   const q = String(query || '').trim().toLowerCase();
   if (!q) {
     return `<button class="pal-cell pal-auto" data-action="emoji-set" data-i="${i}">auto</button>`
-      + EMOJI_PALETTE.map((e) => `<button class="pal-cell" data-action="emoji-set" data-i="${i}" data-e="${e}">${e}</button>`).join('');
+      + (MODES[roundMode].palette || EMOJI_PALETTE).map((e) => `<button class="pal-cell" data-action="emoji-set" data-i="${i}" data-e="${e}">${e}</button>`).join('');
   }
   const match = (kw) => q.includes(' ') ? kw.includes(q) : kw.split(' ').some((t) => t.startsWith(q));
-  const hits = EMOJI_ALL.filter(([, kw]) => match(kw)).slice(0, 64);
+  const hits = EMOJI_SEARCH.filter(([, kw]) => match(kw)).slice(0, 64);
   if (!hits.length) return `<div class="pal-empty">no match — try “pizza”, “park”, “wine”…</div>`;
   return hits.map(([e]) => `<button class="pal-cell" data-action="emoji-set" data-i="${i}" data-e="${e}">${e}</button>`).join('');
 }
@@ -1368,16 +1829,18 @@ app.addEventListener('input', (e) => {
   }
   if (t.classList?.contains('opt-in')) {
     const i = Number(t.id.slice(3));
-    if (!optEmoji[i] && !emojiTouched.has(i)) {          // seed your remembered emoji — but never over a choice you're making
-      const remembered = rememberedEmoji(t.value);
-      if (remembered) optEmoji[i] = remembered;
-    }
     updateEmojiBtn(i);
+    updateFactsUI(i);
+    scheduleLookup(i); // Watch: only once you pause — half-typed words never go out
     saveDraft();
   }
-  else if (t.id === 'title-in') { fitTitle(); saveDraft(); }
+  else if (t.id === 'title-in') titleChanged(false);
   else if (['name-in', 'note-in'].includes(t.id)) saveDraft();
   schedulePrepare();
+});
+/* leaving a row means its title is finished: look it up now instead of after the pause */
+app.addEventListener('change', (e) => {
+  if (e.target.classList?.contains('opt-in')) scheduleLookup(Number(e.target.id.slice(3)), true);
 });
 /* enter → next field: title → option 1 → … → the last option */
 app.addEventListener('keydown', (e) => {
@@ -1408,11 +1871,13 @@ app.addEventListener('paste', (e) => {
   if (needed > composeCount) {
     const vals = saveComposeValues();
     composeCount = needed;
+    saveDraft(); // renderHome rebuilds from the draft: keep the mode you're in
     renderHome();
     restoreComposeValues(vals);
   }
   lines.slice(0, 6 - start).forEach((l, j) => { const el = $('#opt' + (start + j)); if (el) el.value = l.slice(0, 64); });
-  for (let i = 0; i < composeCount; i++) updateEmojiBtn(i);
+  for (let i = 0; i < composeCount; i++) { updateEmojiBtn(i); updateFactsUI(i); }
+  scheduleAllLookups(true); // a pasted list is finished titles
   saveDraft();
   schedulePrepare();
   toast('Filled from your list ✂️');
@@ -1447,6 +1912,7 @@ async function route() {
     store.set('draft', {
       title: p.t || '', name: store.get('name', ''), note: p.n || '',
       opts: p.o.slice(0, 6).map((o) => String(o ?? '')), emoji: {}, count: Math.min(6, Math.max(5, p.o.length)),
+      mode: isMode(p.m) ? p.m : 'f', modeTouched: isMode(p.m), // a draft that names its mode keeps it
     });
     history.replaceState(null, '', location.pathname + location.search);
     routedPayload = null;

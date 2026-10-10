@@ -12,7 +12,7 @@ if ! lsof -nP -i ":$PORT" >/dev/null 2>&1; then
   sleep 0.5
 fi
 DOM="$(mktemp)"
-"$CHROME" --headless=new --disable-gpu --dump-dom --virtual-time-budget=20000 \
+"$CHROME" --headless=new --disable-gpu --dump-dom --virtual-time-budget=40000 \
   "http://localhost:$PORT/_smoke.html" >"$DOM" 2>/dev/null
 python3 - "$DOM" <<'PY'
 import sys, html, re

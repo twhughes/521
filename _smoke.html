@@ -8,6 +8,32 @@ const A = (name, cond) => log.push((cond ? 'PASS' : 'FAIL') + ' ' + name);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const f = document.getElementById('f');
 
+/* Cinemeta, faked: the app's fetch answers from this table and logs every ask, so the test
+   never leaves the machine and can prove who asks (only the lister, only in Watch, only
+   finished titles). Any other search finds nothing. */
+const CANNED = {
+  'catalog/movie/top/search=Inception.json': { metas: [{ id: 'tt1375666', imdb_id: 'tt1375666', name: 'Inception', releaseInfo: '2010' }] },
+  'meta/movie/tt1375666.json': { meta: { imdb_id: 'tt1375666', name: 'Inception', imdbRating: '8.8', runtime: '148 min', genre: ['Adventure', 'Sci-Fi', 'Thriller'], popularity: 1.8, releaseInfo: '2010' } },
+  'catalog/movie/top/search=Fargo.json': { metas: [{ id: 'tt0116282', imdb_id: 'tt0116282', name: 'Fargo', releaseInfo: '1996' }] },
+  'catalog/series/top/search=Fargo.json': { metas: [{ id: 'tt2802850', imdb_id: 'tt2802850', name: 'Fargo', releaseInfo: '2014-2024' }] },
+  'meta/movie/tt0116282.json': { meta: { imdb_id: 'tt0116282', name: 'Fargo', imdbRating: '8.1', runtime: '98 min', genre: ['Crime', 'Drama', 'Thriller'], popularity: 0.42, releaseInfo: '1996' } },
+  'meta/series/tt2802850.json': { meta: { imdb_id: 'tt2802850', name: 'Fargo', imdbRating: '8.8', runtime: '52 min', genre: ['Crime', 'Drama', 'Thriller'], popularity: 3.2, releaseInfo: '2014–2024', videos: [1, 1, 2, 3, 4, 5, 0].map((season) => ({ season })) } },
+  'catalog/movie/top/search=Past%20Lives.json': { metas: [{ id: 'tt13238346', imdb_id: 'tt13238346', name: 'Past Lives', releaseInfo: '2023' }] },
+  'meta/movie/tt13238346.json': { meta: { imdb_id: 'tt13238346', name: 'Past Lives', imdbRating: '7.8', runtime: '105 min', genre: ['Drama', 'Romance'], popularity: 1.1, releaseInfo: '2023' } },
+  'catalog/series/top/search=Severance.json': { metas: [{ id: 'tt11280740', imdb_id: 'tt11280740', name: 'Severance', releaseInfo: '2022-' }] },
+  'meta/series/tt11280740.json': { meta: { imdb_id: 'tt11280740', name: 'Severance', imdbRating: '8.7', runtime: '55 min', genre: ['Drama', 'Mystery', 'Sci-Fi'], popularity: 2.5, releaseInfo: '2022–', videos: [1, 2].map((season) => ({ season })) } },
+};
+function fakeCinemeta(w) {
+  const calls = [];
+  w.fetch = async (url) => {
+    const path = String(url).replace('https://v3-cinemeta.strem.io/', '');
+    calls.push(path);
+    const body = CANNED[path] || (path.startsWith('catalog/') ? { metas: [] } : null);
+    return body ? new w.Response(JSON.stringify(body), { status: 200 }) : new w.Response('none', { status: 404 });
+  };
+  return calls;
+}
+
 async function run() {
   await new Promise((r) => { f.onload = r; });
   await sleep(300);
@@ -34,6 +60,7 @@ async function run() {
   await reloaded;
   await sleep(300);
   d = f.contentDocument;
+  const foodCalls = fakeCinemeta(f.contentWindow); // lives until the next full load: the whole food round below
   A('draft survives reload', d.querySelector('#opt0').value === 'tacos' && d.querySelector('#opt4').value === 'oyster bar');
 
   // --- compose ---
@@ -141,6 +168,8 @@ async function run() {
   A('done shows winner', d.body.textContent.includes('Sushi bar'));
   A('done shows the verdict note', !!d.querySelector('.round-note') && d.querySelector('.round-note').textContent.includes('it was close'));
   A('done credits the ritual', d.body.textContent.includes('Partner kept Sushi bar'));
+  A('done keeps Open in Maps for food', !!d.querySelector('.band .chip.maps[data-action="show-map"]'));
+  A('a food round asks no outside service, start to trophy', foodCalls.length === 0);
 
   // --- history + broken link ---
   f.contentWindow.location.href = '/index.html#not-a-real-payload';
@@ -177,6 +206,168 @@ async function run() {
   A('no recent-rounds list on home', !d.body.textContent.includes('Recent rounds'));
   A('rounds still logged on this phone (first-timer checks)', JSON.parse(f.contentWindow.localStorage.getItem('521.history') || '[]').some((h) => h.winner === 'Sushi bar'));
   A('draft survives into a fresh load', d.querySelector('#opt1')?.value === 'Wine bar');
+
+  // ============ modes: the title picks one, the pill overrides it ============
+  let Wm = f.contentWindow;
+  Wm.localStorage.removeItem('521.draft');
+  Wm.localStorage.removeItem('521.watchCache');
+  const fresh = new Promise((r) => { f.onload = r; });
+  Wm.location.reload();
+  await fresh;
+  await sleep(300);
+  d = f.contentDocument;
+  Wm = f.contentWindow;
+  const calls = fakeCinemeta(Wm);
+  const type = (sel, value) => { const el = d.querySelector(sel); el.value = value; el.dispatchEvent(new Wm.Event('input', { bubbles: true })); };
+  const leave = (sel) => d.querySelector(sel).dispatchEvent(new Wm.Event('change', { bubbles: true }));
+  const pill = () => d.querySelector('#mode-pill')?.textContent || '';
+  const facts = (i) => d.querySelector('#ofacts' + i)?.textContent || '';
+  const tile = (i) => d.querySelectorAll('.emoji-btn')[i]?.textContent;
+  A('a new round starts as Food', pill().includes('Food'));
+  type('#title-in', 'Movie night');
+  await sleep(100);
+  A('the title picks Watch', pill().includes('Watch'));
+  A('Watch swaps the food placeholders', d.querySelector('#opt0').placeholder === 'the buzzy one');
+
+  // --- Watch: lookups wait for a finished title, and only the lister's phone asks ---
+  type('#opt0', 'Incep');
+  await sleep(300);
+  A('a half-typed title is not looked up', calls.length === 0);
+  type('#opt0', 'Inception');
+  await sleep(1500); // the typing pause passes
+  A('a finished title is looked up', calls.some((c) => c.includes('search=Inception.json')));
+  A('nothing half-typed ever went out', !calls.some((c) => c.includes('Incep.json')));
+  A('compose shows the score over the year', facts(0).includes('★ 8.8') && facts(0).includes('2010'));
+  A('the genre picks the emoji (sci-fi 🚀)', tile(0) === '🚀');
+  type('#opt1', 'Fargo'); leave('#opt1');
+  type('#opt2', 'Past Lives'); leave('#opt2');
+  type('#opt3', 'Severance'); leave('#opt3');
+  type('#opt4', 'zzqx not a film'); leave('#opt4');
+  await sleep(600);
+  A('leaving a row looks it up at once', facts(2).includes('★ 7.8'));
+  A('movie night finds Fargo the film', facts(1).includes('1996'));
+  type('#title-in', 'Next show');
+  await sleep(1500);
+  A('a show title asks again: Fargo the series', facts(1).includes('2014') && tile(1) === '🕵️');
+  A('no match shows no score', !d.querySelector('#ofacts4 .facts'));
+  d.querySelector('#name-in').value = 'Sam';
+  d.querySelector('[data-action="compose-share"]').click();
+  await sleep(400);
+  const watchCut = d.querySelector('#compose-linkrow #share-url')?.dataset.url || '';
+  const wp = await Wm.decodePayload(watchCut.split('#')[1]);
+  A('the mode rides in the link', wp.m === 'w');
+  A('the facts ride in the link, one per option', JSON.stringify(wp.x) ===
+    JSON.stringify([[1375666, 88, 148], [2802850, 88, 52, 5], [13238346, 78, 105], [11280740, 87, 55, 2], 0]));
+  A('genre emoji ride in the option text', wp.o[0] === '🚀 Inception' && wp.o[1] === '🕵️ Fargo' && wp.o[4] === 'zzqx not a film');
+
+  calls.length = 0;
+  Wm.location.href = watchCut;
+  await sleep(400);
+  d = f.contentDocument;
+  const rowFacts = [...d.querySelectorAll('.choices .facts')];
+  A('watch cut: no Maps buttons', d.querySelectorAll('.choices .mapbtn').length === 0);
+  A('watch cut: every found title shows its facts', rowFacts.length === 4);
+  A('the score links to the IMDb title page', rowFacts[0]?.getAttribute('href') === 'https://www.imdb.com/title/tt1375666/');
+  A('a film shows its runtime', rowFacts[0]?.textContent.includes('★ 8.8') && rowFacts[0]?.textContent.includes('2h 28m'));
+  A('a show shows its seasons', rowFacts[1]?.textContent.includes('5 seasons'));
+  A('an unfound title gets an IMDb search ↗', d.querySelector('.choices .imdbbtn')?.getAttribute('href') === 'https://www.imdb.com/find/?q=zzqx%20not%20a%20film');
+  A('the receiving phone shows the genre emoji', [...d.querySelectorAll('.choices .emoji')].slice(0, 4).map((e) => e.textContent).join('') === '🚀🕵️💕🚀');
+  A('the title pill shows what you watch', (d.querySelector('.band .pill')?.textContent || '').startsWith('📺'));
+  A('the strike-out ✕ stays', d.querySelectorAll('.choices .strikebtn').length === 5);
+  const wc = d.querySelectorAll('.choices .choice');
+  wc[0].click(); wc[1].click();
+  await sleep(150);
+  d.querySelector('[data-action="cut-share"]').click();
+  await sleep(400);
+  const watchClose = d.querySelector('#cut-linkrow #share-url')?.dataset.url || '';
+  Wm.location.href = watchClose;
+  await sleep(400);
+  d = f.contentDocument;
+  A('watch close: both finalists keep their facts', d.querySelectorAll('#final-choices .facts').length === 2);
+  d.querySelectorAll('#final-choices .choice')[1].click();
+  await sleep(300);
+  d.querySelector('[data-action="close-share"]').click();
+  await sleep(400);
+  const watchDone = d.querySelector('#close-linkrow #share-url')?.dataset.url || '';
+  Wm.location.href = watchDone;
+  await sleep(600);
+  d = f.contentDocument;
+  const winChip = d.querySelector('.band a.chip');
+  A('the watch winner links to IMDb with its facts', winChip?.getAttribute('href') === 'https://www.imdb.com/title/tt2802850/' &&
+    winChip.textContent.includes('★ 8.8') && winChip.textContent.includes('5 seasons'));
+  A('after compose, the round asked no one', calls.length === 0);
+  log.push(`LEN watch cut=${watchCut.length} close=${watchClose.length} done=${watchDone.length}`);
+
+  // --- back on compose: one fresh round per mode ---
+  const freshCompose = async () => {
+    Wm.localStorage.removeItem('521.draft');
+    Wm.eval('composeCount = 5; optEmoji = {};');
+    if (Wm.location.hash) Wm.location.hash = ''; else Wm.route(); // re-render compose either way
+    await sleep(300);
+    d = f.contentDocument;
+  };
+  const sendFive = async (title, five) => {
+    type('#title-in', title);
+    five.forEach((o, i) => type('#opt' + i, o));
+    await sleep(100);
+    d.querySelector('[data-action="compose-share"]').click();
+    await sleep(400);
+    return d.querySelector('#compose-linkrow #share-url')?.dataset.url || '';
+  };
+  calls.length = 0;
+
+  // Food: your past emoji pick returns for that name, and leaves with its text
+  await freshCompose();
+  A('a fresh round is Food again', pill().includes('Food'));
+  type('#opt0', 'Burger joint');
+  A('your past pick returns for that name', tile(0) === '🌮');
+  type('#opt0', '');
+  A('clearing the row clears its emoji too', tile(0) === '＋');
+  const foodCut = await sendFive('Friday', ['', 'Sushi bar', 'Thai place', 'Pasta place', 'Noodle bar']);
+  const fp = await Wm.decodePayload(foodCut.split('#')[1]);
+  A('no lone emoji left behind as an option', fp.o.length === 4 && !fp.o.includes('🌮'));
+  A('a food link carries no mode and no facts', !('m' in fp) && !('x' in fp));
+
+  // Travel: the title picks it; places get flags and keep Maps
+  await freshCompose();
+  const tripCut = await sendFive('Weekend trip', ['Lisbon', 'Kyoto', 'Napa', 'Montréal', 'A cabin']);
+  A('a trip title is Travel', (await Wm.decodePayload(tripCut.split('#')[1])).m === 't');
+  Wm.location.href = tripCut;
+  await sleep(400);
+  d = f.contentDocument;
+  A('travel finds flags and places', [...d.querySelectorAll('.choices .emoji')].map((e) => e.textContent).join('') === '🇵🇹🇯🇵🍷🇨🇦🌲');
+  A('travel keeps the Maps buttons', d.querySelectorAll('.choices .mapbtn').length === 5);
+
+  // Other, from the pill: no ↗ at all, and the title stops steering
+  await freshCompose();
+  type('#title-in', 'Friday');
+  d.querySelector('#mode-pill').click();
+  await sleep(100);
+  A('the pill opens the mode chips, even with a title', d.querySelector('.band').classList.contains('mode-open') &&
+    Wm.getComputedStyle(d.querySelector('.mode-chips')).display === 'flex');
+  d.querySelector('.mode-chips [data-mode="o"]').click();
+  await sleep(100);
+  A('a picked mode shows on the pill and folds the chips', pill().includes('Other') && !d.querySelector('.band').classList.contains('mode-open'));
+  const otherCut = await sendFive('Friday movie', ['Bowling', 'Board games', 'Stay in', 'Karaoke', 'Long walk']);
+  A('once picked, the title no longer steers the mode', (await Wm.decodePayload(otherCut.split('#')[1])).m === 'o');
+  Wm.location.href = otherCut;
+  await sleep(400);
+  d = f.contentDocument;
+  A('other has no ↗ buttons', !d.querySelector('.choices .mapbtn, .choices .imdbbtn, .choices .facts'));
+  A('food, travel and other rounds ask no outside service', calls.length === 0);
+
+  // a mode picked on the pill survives a reload, with the rest of the draft
+  await freshCompose();
+  type('#opt0', 'Somewhere');
+  d.querySelector('#mode-pill').click(); await sleep(100);
+  d.querySelector('.mode-chips [data-mode="t"]').click(); await sleep(100);
+  const reloadedMode = new Promise((r) => { f.onload = r; });
+  Wm.location.reload();
+  await reloadedMode;
+  await sleep(300);
+  d = f.contentDocument; Wm = f.contentWindow;
+  A('a picked mode survives a reload', pill().includes('Travel') && d.querySelector('#opt0')?.value === 'Somewhere');
+  A('…and so do its placeholders', d.querySelector('#opt1').placeholder === 'a city we haven’t done');
 
   finish();
 }
