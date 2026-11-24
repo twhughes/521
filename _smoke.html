@@ -366,6 +366,15 @@ async function run() {
   A('no lone emoji left behind as an option', fp.o.length === 4 && !fp.o.includes('🌮'));
   A('a food link carries no mode and no facts', !('m' in fp) && !('x' in fp));
 
+  // the same name twice is a duplicate, whatever emoji each row wears
+  await freshCompose();
+  ['Pizza place', 'pizza place', 'Thai place'].forEach((o, i) => type('#opt' + i, o));
+  Wm.eval("optEmoji = { 1: '🍣' };");
+  A('the same name with another emoji is still a duplicate', /same/.test(Wm.readCompose().error || ''));
+  Wm.eval("optEmoji = { 0: '🍕', 1: '🍣' };");
+  type('#opt1', 'Sushi bar');
+  A('different names with emoji are fine', !Wm.readCompose().error);
+
   // Travel: the title picks it; places get flags and keep Maps
   await freshCompose();
   const tripCut = await sendFive('Weekend trip', ['Lisbon', 'Kyoto', 'Napa', 'Montréal', 'A cabin']);

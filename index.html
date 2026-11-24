@@ -1733,7 +1733,7 @@ function readCompose() {
     years.push(f ? factYear(f) : 0);
   }
   if (opts.length < 3) return { error: 'Give them at least 3 options (5 is the ritual).' };
-  const lower = opts.map((o) => o.toLowerCase());
+  const lower = opts.map((o) => shown(o).trim().toLowerCase()); // the name, not its emoji: "🍕 Joe's" and "🍣 joe's" are one place
   if (new Set(lower).size !== lower.length) return { error: 'Two of those are the same. Every option should be distinct.' };
   const payload = { v: 1, s: 'cut', t: title, l: name, o: opts };
   if (mode !== 'f') payload.m = mode;               // Food is the default: older links have no mode
