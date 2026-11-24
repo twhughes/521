@@ -209,6 +209,8 @@ async function run() {
   A('a list that is not a list is a broken link', await hostile({ v: 1, s: 'done', o: 'abc', k: [0, 1], w: 0 }) === 'broken' &&
     d.body.textContent.includes("didn't survive"));
   A('non-text options are a broken link', await hostile({ v: 1, s: 'cut', o: [{}, 7, 'c'] }) === 'broken');
+  A('a winner that was not kept is a broken link', await hostile({ v: 1, s: 'done', o: ['a', 'b', 'c'], k: [0, 1], w: 2 }) === 'broken');
+  A('a fair verdict still opens', await hostile({ v: 1, s: 'done', o: ['a', 'b', 'c'], k: [0, 1], w: 1 }) === 'done' && d.body.textContent.includes('Kept a and b'));
 
   // --- draft deep link (voice prefill): seeds compose, strips hash ---
   const W2 = f.contentWindow;

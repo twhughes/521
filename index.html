@@ -2124,7 +2124,8 @@ async function route() {
   }
   if (p.s === 'cut' && optsOk(p.o)) { renderCut(p); document.title = `5·2·1 — ${p.t || 'your cut'}`; }
   else if (p.s === 'close' && optsOk(p.o) && keepOk(p)) { renderClose(p); document.title = `5·2·1 — ${p.t ? p.t + ' · ' : ''}your pick`; }
-  else if (p.s === 'done' && optsOk(p.o) && Number.isInteger(p.w) && p.o[p.w] !== undefined) { renderDone(p); document.title = `5·2·1 — 🏆 ${p.o[p.w]}`; }
+  else if (p.s === 'done' && optsOk(p.o) && Number.isInteger(p.w) && p.o[p.w] !== undefined &&
+           (p.k === undefined || (keepOk(p) && p.k.includes(p.w)))) { /* the winner is one of the two kept */ renderDone(p); document.title = `5·2·1 — 🏆 ${p.o[p.w]}`; }
   else renderBroken();
   scrollTo(0, 0);
 }
