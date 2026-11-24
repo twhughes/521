@@ -2092,6 +2092,10 @@ document.addEventListener('keydown', (e) => {
 });
 
 /* ---------- router ---------- */
+/* anyone can send a link, so the keeps must be two different options of the list before a
+   screen writes them anywhere (they land in data-i attributes) */
+const keepOk = (p) => Array.isArray(p.o) && Array.isArray(p.k) && p.k.length === 2 && p.k[0] !== p.k[1] &&
+  p.k.every((i) => Number.isInteger(i) && i >= 0 && i < p.o.length);
 let routedPayload = null;
 async function route() {
   keepSet = new Set(); finalPick = null; resetGeo();
@@ -2117,7 +2121,7 @@ async function route() {
     return;
   }
   if (p.s === 'cut' && Array.isArray(p.o) && p.o.length >= 2) { renderCut(p); document.title = `5·2·1 — ${p.t || 'your cut'}`; }
-  else if (p.s === 'close' && Array.isArray(p.k) && p.k.length === 2) { renderClose(p); document.title = `5·2·1 — ${p.t ? p.t + ' · ' : ''}your pick`; }
+  else if (p.s === 'close' && keepOk(p)) { renderClose(p); document.title = `5·2·1 — ${p.t ? p.t + ' · ' : ''}your pick`; }
   else if (p.s === 'done' && Number.isInteger(p.w) && p.o?.[p.w] !== undefined) { renderDone(p); document.title = `5·2·1 — 🏆 ${p.o[p.w]}`; }
   else renderBroken();
   scrollTo(0, 0);
