@@ -189,6 +189,29 @@ async function run() {
   d = f.contentDocument;
   A('legacy v1 link still decodes', d.querySelectorAll('.choices .choice').length === 3 && d.body.textContent.includes('Slice shop'));
 
+  // --- a crafted link: anyone can send one, so it must not run script or break a screen ---
+  const hostile = async (payload) => {
+    f.contentWindow.location.href = '/index.html#' + await f.contentWindow.encodePayload(payload);
+    await sleep(400);
+    d = f.contentDocument;
+    return d.querySelector('#app').dataset.view;
+  };
+  window.__xss = 0;
+  const xssView = await hostile({ v: 1, s: 'close', o: ['a', 'b', 'c'], k: ['"><img src=x onerror="parent.__xss=1">', 1] });
+  await sleep(300);
+  A('a keep that is markup never runs script', window.__xss === 0 && xssView === 'broken' && !d.querySelector('#app img'));
+  A('a keep of one option twice is a broken link', await hostile({ v: 1, s: 'close', o: ['a', 'b', 'c'], k: [0, 0] }) === 'broken');
+  A('a keep outside the list is a broken link', await hostile({ v: 1, s: 'close', o: ['a', 'b', 'c'], k: [5, 9] }) === 'broken');
+  A('a fair keep still opens the pick', await hostile({ v: 1, s: 'close', o: ['a', 'b', 'c'], k: [0, 2] }) === 'close' &&
+    d.querySelectorAll('#final-choices .choice').length === 2);
+  A('a null option is a broken link, not a blank page', await hostile({ v: 1, s: 'done', o: [null, 'b', 'c'], k: [0, 1], w: 0 }) === 'broken' &&
+    d.body.textContent.includes("didn't survive"));
+  A('a list that is not a list is a broken link', await hostile({ v: 1, s: 'done', o: 'abc', k: [0, 1], w: 0 }) === 'broken' &&
+    d.body.textContent.includes("didn't survive"));
+  A('non-text options are a broken link', await hostile({ v: 1, s: 'cut', o: [{}, 7, 'c'] }) === 'broken');
+  A('a winner that was not kept is a broken link', await hostile({ v: 1, s: 'done', o: ['a', 'b', 'c'], k: [0, 1], w: 2 }) === 'broken');
+  A('a fair verdict still opens', await hostile({ v: 1, s: 'done', o: ['a', 'b', 'c'], k: [0, 1], w: 1 }) === 'done' && d.body.textContent.includes('Kept a and b'));
+
   // --- draft deep link (voice prefill): seeds compose, strips hash ---
   const W2 = f.contentWindow;
   const draftHash = await W2.encodePayload({ v: 1, s: 'draft', t: 'Thursday dinner', o: ['Happy hour spot', 'Wine bar', 'Trattoria'], n: 'from voice' });
@@ -342,6 +365,15 @@ async function run() {
   const fp = await Wm.decodePayload(foodCut.split('#')[1]);
   A('no lone emoji left behind as an option', fp.o.length === 4 && !fp.o.includes('🌮'));
   A('a food link carries no mode and no facts', !('m' in fp) && !('x' in fp));
+
+  // the same name twice is a duplicate, whatever emoji each row wears
+  await freshCompose();
+  ['Pizza place', 'pizza place', 'Thai place'].forEach((o, i) => type('#opt' + i, o));
+  Wm.eval("optEmoji = { 1: '🍣' };");
+  A('the same name with another emoji is still a duplicate', /same/.test(Wm.readCompose().error || ''));
+  Wm.eval("optEmoji = { 0: '🍕', 1: '🍣' };");
+  type('#opt1', 'Sushi bar');
+  A('different names with emoji are fine', !Wm.readCompose().error);
 
   // Travel: the title picks it; places get flags and keep Maps
   await freshCompose();
